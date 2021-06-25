@@ -226,7 +226,7 @@ final class Console extends Parser
 
     private function register_wpload()
     {
-        if ( empty($_SERVER['HTTP_HOST']) ) {
+        if (!isset($_SERVER['HTTP_HOST'])) {
             $_SERVER['HTTP_HOST'] = '';
         }
 
@@ -323,7 +323,9 @@ final class Console extends Parser
                 $this->proc_fork(
                     $hook,
                     function () use ($hook, $v, $cnt) {
-                        $this->output('Executed the cron event (#'.$cnt.'): '.$hook.PHP_EOL);
+                        if (!$this->args['quiet']) {
+                            $this->output('Executed the cron event (#'.$cnt.'): '.$hook.PHP_EOL);
+                        }
 
                         if (!$this->args['dryrun']) {
                             do_action_ref_array($hook, $v['args']);
