@@ -1,6 +1,6 @@
 {
     "name": "nawawi/docket-cronwp",
-    "description": "Docket CronWP is a command-line tool for executing WordPress cron events in parallel.",
+    "description": "A command-line tool for executing WordPress cron events in parallel.",
     "keywords": [
         "wp-cron",
         "parallel",
@@ -23,7 +23,6 @@
         "issues": "https://github.com/nawawi/docket-cronwp/issues",
         "source": "https://github.com/nawawi/docket-cronwp"
     },
-
     "require": {
         "php": ">=7.2.5",
         "ext-pcntl": ">=7.2.5"
@@ -42,6 +41,7 @@
         ]
     },
     "config": {
-        "vendor-dir": "includes/vendor"
+        "vendor-dir": "includes/vendor",
+        "optimize-autoloader": true
     }
 }
