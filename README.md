@@ -36,13 +36,13 @@ Options:
 ## Example
 Run WordPress cron with 3 events execute in parallel.
 ```
-php docket-cronwp.php /path/to/wordpress --jobs 3
+php docket-cronwp.php /path-to/wordpress --jobs 3
 ```
 Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron.  
 ```
-*/5 * * * * root /usr/bin/php -f /opt/docket-cronwp/docket-cronwp.php /opt/webapp/wordpress -j3 &>/dev/null
+*/5 * * * * root /usr/bin/php -f /path-to/docket-cronwp.php /path-to/wordpress -j3 &>/dev/null
 ```
-Replace **root** with web server user to avoid filesystem permission issue.
+Replace **root** with web server user to avoid issue with filesystem permission.
 
 ## License
 
