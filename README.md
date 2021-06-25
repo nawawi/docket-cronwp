@@ -13,8 +13,13 @@ Docket CronWP is a command-line tool for executing WordPress cron events in para
 - PHP pnctl extension
 
 ## Installation
-```
+Docket CronWP is available as a [Composer package](https://packagist.org/packages/nawawi/docket-cronwp) and can be installed as below:
+```sh
 composer create-project nawawi/docket-cronwp
+```
+Disable the built in WordPress cron in `wp-config.php`:
+```php
+define( 'DISABLE_WP_CRON', true );
 ```
 ## Usage
 ```
@@ -35,11 +40,11 @@ Options:
 
 ## Example
 Run WordPress cron with 3 events execute in parallel.
-```
+```sh
 php docket-cronwp.php /path-to/wordpress --jobs 3
 ```
 Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron.  
-```
+```sh
 */5 * * * * root /usr/bin/php -f /path-to/docket-cronwp.php /path-to/wordpress -j3 &>/dev/null
 ```
 Replace **root** with web server user to avoid issue with filesystem permission.
