@@ -42,7 +42,6 @@
         ]
     },
     "config": {
-        "vendor-dir": "includes/vendor",
-        "optimize-autoloader": true
+        "vendor-dir": "includes/vendor"
     }
 }
