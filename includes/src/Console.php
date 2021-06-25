@@ -226,6 +226,10 @@ final class Console extends Parser
 
     private function register_wpload()
     {
+        if ( empty($_SERVER['HTTP_HOST']) ) {
+            $_SERVER['HTTP_HOST'] = '';
+        }
+
         \define('DOING_CRON', true);
 
         $wpload = $this->args['wpdir'].'/wp-load.php';
