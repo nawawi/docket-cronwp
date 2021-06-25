@@ -17,7 +17,7 @@ Docket CronWP is a command-line tool for executing WordPress cron events in para
 ## Usage
 
 ```
-php docket-cronwp /path/to/wordpress --jobs 3
+php docket-cronwp.php /path/to/wordpress --jobs 3
 ```
 
 ## License

@@ -15,6 +15,15 @@
         "email": "nawawijamili@gmail.com",
         "homepage": "https://github.com/nawawi"
     } ],
+    "repositories": [ {
+        "type": "vcs",
+        "url": "https://github.com/nawawi/docket-cronwp"
+    } ],
+    "support": {
+        "issues": "https://github.com/nawawi/docket-cronwp/issues",
+        "source": "https://github.com/nawawi/docket-cronwp"
+    },
+
     "require": {
         "php": ">=7.2.5",
         "ext-pcntl": ">=7.2.5"
