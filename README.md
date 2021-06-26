@@ -7,45 +7,61 @@ Execute WordPress cron events in parallel.
 Docket CronWP is a command-line tool for executing WordPress cron events in parallel.
 
 ## Requirements
-
+- UNIX-like environment (OS X, Linux, FreeBSD, Cygwin, WSL)
 - PHP >= 7.2.5
 - WordPress >= 5.4
 - PHP pnctl extension
 
 ## Installation
-Docket CronWP is available as a [Composer package](https://packagist.org/packages/nawawi/docket-cronwp) and can be installed as below:
+
+Download the [docket-cronwp.phar](https://github.com/nawawi/docket-cronwp/raw/main/bin/docket-cronwp.phar) using wget or curl.
+
 ```sh
-composer create-project nawawi/docket-cronwp
+wget https://github.com/nawawi/docket-cronwp/raw/main/bin/docket-cronwp.phar
 ```
+
+Next, check the Phar file to verify that it’s working:
+
+```sh
+php docket-cronwp.phar --help
+```
+
+To use docket-cronwp.phar from the command line by typing docket-cronwp, make the file executable and move it to somewhere in your PATH. For example:
+
+```sh
+chmod +x docket-cronwp.phar
+sudo mv docket-cronwp.phar /usr/local/bin/docket-cronwp
+```
+
 Disable the built in WordPress cron in `wp-config.php`:
 ```php
 define( 'DISABLE_WP_CRON', true );
 ```
-## Usage
-```
-php docket-cronwp.php -h
-Docket CronWP v1.0.1. Execute WordPress cron events in parallel.
 
-Usage: docket-cronwp [<path>|<option>]
+## Usage
+```sh
+cronwp -h
+Docket CronWP v1.0.3. Execute WordPress cron events in parallel.
+
+Usage: docket-cronwp.php [<path>|<option>]
 
 Options:
   -p --path <path>      Path to the WordPress files.
-  -j --jobs <number>    Run number of jobs in parallel.
+  -j --jobs <number>    Run number of events in parallel.
   -a --run-now          Run all cron event.
   -t --dry-run          Run without execute cron event.
   -q --quiet            Suppress informational messages.
   -h --help             Display this help and exit.
-
 ```
 
 ## Example
 Run WordPress cron with 3 events execute in parallel.
 ```sh
-php docket-cronwp.php /path-to/wordpress --jobs 3
+docket-cronwp /path-to/wordpress --jobs 3
 ```
 Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron.  
 ```sh
-*/5 * * * * root /usr/bin/php -f /path-to/docket-cronwp.php /path-to/wordpress -j3 &>/dev/null
+*/5 * * * * root /usr/local/bin/docket-cronwp /path-to/wordpress -j3 &>/dev/null
 ```
 Replace **root** with web server user to avoid issue with filesystem permission.
 
