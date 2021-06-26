@@ -1,3 +1,5 @@
+MIT License
+
 Docket CronWP
 
 Copyright (c) 2021 Nawawi Jamili
