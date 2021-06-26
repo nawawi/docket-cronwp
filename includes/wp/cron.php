@@ -8,7 +8,7 @@
  * @see    https://github.com/nawawi/docket-cronwp
  */
 
-/**
+/*
  * Reference:
  *  wp-includes/cron.php.
  */
@@ -42,7 +42,7 @@ function dc_putdata($data)
 
     $code = '<?php return '.var_export($data, 1).';';
 
-    return file_put_contents($file, $code, LOCK_EX);
+    return file_put_contents($file, $code, \LOCK_EX);
 }
 
 function dc_wp_schedule_event($timestamp, $recurrence, $hook, $args = [], $wp_error = false)

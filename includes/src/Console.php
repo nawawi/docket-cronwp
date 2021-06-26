@@ -37,12 +37,12 @@ final class Console extends Parser
     private function compat_notice()
     {
         if (!(\PHP_VERSION_ID >= 70205)) {
-            $this->output('Docket CronWP requires PHP 7.2.5 or greater.'.PHP_EOL);
+            $this->output('Docket CronWP requires PHP 7.2.5 or greater.'.\PHP_EOL);
             exit(2);
         }
 
         if (!\extension_loaded('pcntl')) {
-            $this->output('Docket CronWP requires pcntl extension.'.PHP_EOL);
+            $this->output('Docket CronWP requires pcntl extension.'.\PHP_EOL);
             exit(2);
         }
     }
@@ -70,7 +70,7 @@ final class Console extends Parser
 
     private function output($text, $is_error = false)
     {
-        $fd = $is_error ? STDERR : STDOUT;
+        $fd = $is_error ? \STDERR : \STDOUT;
         fwrite($fd, $text);
     }
 
@@ -94,32 +94,32 @@ final class Console extends Parser
 
     private function print_banner()
     {
-        $this->output(sprintf('Docket CronWP v%s. Execute WordPress cron events in parallel.', DOCKET_CRONWP_VERSION).PHP_EOL.PHP_EOL);
+        $this->output(sprintf('Docket CronWP v%s. Execute WordPress cron events in parallel.', DOCKET_CRONWP_VERSION).\PHP_EOL.\PHP_EOL);
     }
 
     private function print_usage()
     {
         $text = '';
         $text .= sprintf("Usage: %s [<path>|<option>]\n", basename(DOCKET_CRONWP));
-        $text .= PHP_EOL.'Options:'.PHP_EOL;
-        $text .= '  -p --path <path>      Path to the WordPress files.'.PHP_EOL;
-        $text .= '  -j --jobs <number>    Run number of jobs in parallel.'.PHP_EOL;
-        $text .= '  -a --run-now          Run all cron event.'.PHP_EOL;
-        $text .= '  -t --dry-run          Run without execute cron event.'.PHP_EOL;
-        $text .= '  -q --quiet            Suppress informational messages.'.PHP_EOL;
-        $text .= '  -h --help             Display this help and exit.'.PHP_EOL;
+        $text .= \PHP_EOL.'Options:'.\PHP_EOL;
+        $text .= '  -p --path <path>      Path to the WordPress files.'.\PHP_EOL;
+        $text .= '  -j --jobs <number>    Run number of events in parallel.'.\PHP_EOL;
+        $text .= '  -a --run-now          Run all cron event.'.\PHP_EOL;
+        $text .= '  -t --dry-run          Run without execute cron event.'.\PHP_EOL;
+        $text .= '  -q --quiet            Suppress informational messages.'.\PHP_EOL;
+        $text .= '  -h --help             Display this help and exit.'.\PHP_EOL;
         $this->output($text);
     }
 
     private function print_args()
     {
-        $text = 'Path: '.$this->args['wpdir'].PHP_EOL;
+        $text = 'Path: '.$this->args['wpdir'].\PHP_EOL;
         $this->output($text);
     }
 
     private function register_args()
     {
-        $this->args['dcdir'] = $this->normalize_path(DOCKET_CRONWP);
+        $this->args['dcdir'] = $this->normalize_path(DOCKET_CRONWP_DIR);
         $params = $this->parse();
         $this->register_wpdir($params);
 
@@ -170,7 +170,8 @@ final class Console extends Parser
         }
 
         if (empty($this->args['wpdir']) || !is_file($this->args['wpdir'].'/wp-load.php')) {
-            $this->output("No WordPress installation found, run docket-cronwp path/to/wordpress or --path=`path/to/wordpress`\n", true);
+            $app = basename(DOCKET_CRONWP);
+            $this->output('No WordPress installation found, run '.$app.' `path/to/wordpress`.'.\PHP_EOL.'Run '.$app.' --help for more options.'.\PHP_EOL, true);
             exit(1);
         }
 
@@ -187,14 +188,14 @@ final class Console extends Parser
     private function proc_fork($name, $callback)
     {
         if (!\is_callable($callback)) {
-            $this->output($callback.' is not callable'.PHP_EOL, true);
+            $this->output($callback.' is not callable'.\PHP_EOL, true);
 
             return false;
         }
 
         $pid = pcntl_fork();
         if (-1 === $pid) {
-            $this->output('Failed to fork the cron event '.$name.PHP_EOL);
+            $this->output('Failed to fork the cron event '.$name.\PHP_EOL);
 
             return false;
         }
@@ -209,13 +210,17 @@ final class Console extends Parser
 
     private function proc_wait()
     {
+        if (empty($this->pids)) {
+            return false;
+        }
+
         $pids = array_keys($this->pids);
         foreach ($pids as $key) {
             if (!isset($this->pids[$key])) {
                 continue;
             }
 
-            $pid = pcntl_waitpid($this->pids[$key], $status, WNOHANG);
+            $pid = pcntl_waitpid($this->pids[$key], $status, \WNOHANG);
             if (-1 === $pid || $pid > 0) {
                 unset($this->pids[$key]);
             }
@@ -236,12 +241,12 @@ final class Console extends Parser
         $wpcron = $this->args['dcdir'].'/includes/wp/cron.php';
 
         if (!@is_file($wpload)) {
-            $this->output('Failed to load: '.$wpload.PHP_EOL, true);
+            $this->output('Failed to load: '.$wpload.\PHP_EOL, true);
             exit(1);
         }
 
         if (!@is_file($wpcron)) {
-            $this->output('Failed to load: '.$wpcron.PHP_EOL, true);
+            $this->output('Failed to load: '.$wpcron.\PHP_EOL, true);
             exit(1);
         }
 
@@ -278,14 +283,14 @@ final class Console extends Parser
         }
 
         if (empty($crons)) {
-            $this->output('No cron event ready to run. Try \'--run-now\' to run all now.'.PHP_EOL);
+            $this->output('No cron event ready to run. Try \'--run-now\' to run all now.'.\PHP_EOL);
             exit(0);
         }
 
         if (!$this->args['dryrun']) {
             $code = '<?php return '.var_export($crons, 1).';';
-            if (!file_put_contents($lock_file, $code, LOCK_EX)) {
-                $this->output('Failed to save cron data.'.PHP_EOL);
+            if (!file_put_contents($lock_file, $code, \LOCK_EX)) {
+                $this->output('Failed to save cron data.'.\PHP_EOL);
                 exit(0);
             }
         }
@@ -322,13 +327,13 @@ final class Console extends Parser
 
                 $this->proc_fork(
                     $hook,
-                    function () use ($hook, $v, $cnt) {
+                    function () use ($hook, $args, $cnt) {
                         if (!$this->args['quiet']) {
-                            $this->output('Executed the cron event (#'.$cnt.'): '.$hook.PHP_EOL);
+                            $this->output('Executed the cron event (#'.$cnt.'): '.$hook.\PHP_EOL);
                         }
 
                         if (!$this->args['dryrun']) {
-                            do_action_ref_array($hook, $v['args']);
+                            do_action_ref_array($hook, $args);
                         }
                     }
                 );
@@ -355,6 +360,5 @@ final class Console extends Parser
         }
 
         exit(0);
-        //delete_transient($lock_key);
     }
 }
