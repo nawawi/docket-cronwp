@@ -39,8 +39,9 @@ define( 'DISABLE_WP_CRON', true );
 ```
 
 ## Usage
-```sh
-cronwp -h
+```
+docket-cronwp -h
+
 Docket CronWP v1.0.3. Execute WordPress cron events in parallel.
 
 Usage: docket-cronwp.php [<path>|<option>]
@@ -56,13 +57,17 @@ Options:
 
 ## Example
 Run WordPress cron with 3 events execute in parallel.
+
 ```sh
 docket-cronwp /path-to/wordpress --jobs 3
 ```
+
 Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron.  
-```sh
+
+```
 */5 * * * * root /usr/local/bin/docket-cronwp /path-to/wordpress -j3 &>/dev/null
 ```
+
 Replace **root** with web server user to avoid issue with filesystem permission.
 
 ## License

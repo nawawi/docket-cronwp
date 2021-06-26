@@ -94,7 +94,7 @@ final class Console extends Parser
 
     private function print_banner()
     {
-        $this->output(sprintf('Docket CronWP v%s. Execute WordPress cron events in parallel.', DOCKET_CRONWP_VERSION).\PHP_EOL.\PHP_EOL);
+        $this->output(\PHP_EOL.sprintf('Docket CronWP v%s. Execute WordPress cron events in parallel.', DOCKET_CRONWP_VERSION).\PHP_EOL.\PHP_EOL);
     }
 
     private function print_usage()
