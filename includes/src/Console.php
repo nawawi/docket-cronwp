@@ -25,6 +25,7 @@ final class Console extends Parser
         'runnow' => false,
         'site' => '',
         'help' => false,
+        'version' => false,
     ];
 
     public function __construct()
@@ -32,6 +33,7 @@ final class Console extends Parser
         pcntl_async_signals(true);
         $this->compat_notice();
         $this->register_args();
+        $this->register_wpload();
     }
 
     private function compat_notice()
@@ -92,22 +94,35 @@ final class Console extends Parser
         }
     }
 
+    private function app()
+    {
+        return (object) [
+             'name' => basename(DOCKET_CRONWP),
+             'version' => DOCKET_CRONWP_VERSION,
+             'path' => DOCKET_CRONWP_DIR,
+         ];
+    }
+
     private function print_banner()
     {
-        $this->output(\PHP_EOL.sprintf('Docket CronWP v%s. Execute WordPress cron events in parallel.', DOCKET_CRONWP_VERSION).\PHP_EOL.\PHP_EOL);
+        $this->output(\PHP_EOL.'Docket CronWP v'.$this->app()->version.\PHP_EOL.'Execute WordPress cron events in parallel.'.\PHP_EOL.\PHP_EOL);
     }
 
     private function print_usage()
     {
         $text = '';
-        $text .= sprintf("Usage: %s [<path>|<option>]\n", basename(DOCKET_CRONWP));
-        $text .= \PHP_EOL.'Options:'.\PHP_EOL;
+        $text .= 'Usage:'.\PHP_EOL;
+        $text .= '  '.$this->app()->name.' [<path>|<options>]'.\PHP_EOL.\PHP_EOL;
+        $text .= 'Path:'.\PHP_EOL;
+        $text .= '  Path to the WordPress files.'.\PHP_EOL.\PHP_EOL;
+        $text .= 'Options:'.\PHP_EOL;
         $text .= '  -p --path <path>      Path to the WordPress files.'.\PHP_EOL;
         $text .= '  -j --jobs <number>    Run number of events in parallel.'.\PHP_EOL;
         $text .= '  -a --run-now          Run all cron event.'.\PHP_EOL;
         $text .= '  -t --dry-run          Run without execute cron event.'.\PHP_EOL;
+        $text .= '  -h --help             Display this help message.'.\PHP_EOL;
         $text .= '  -q --quiet            Suppress informational messages.'.\PHP_EOL;
-        $text .= '  -h --help             Display this help and exit.'.\PHP_EOL;
+        $text .= '  -V --version          Display version.'.\PHP_EOL;
         $this->output($text);
     }
 
@@ -119,7 +134,7 @@ final class Console extends Parser
 
     private function register_args()
     {
-        $this->args['dcdir'] = $this->normalize_path(DOCKET_CRONWP_DIR);
+        $this->args['dcdir'] = $this->normalize_path($this->app()->path);
         $params = $this->parse();
         $this->register_wpdir($params);
 
@@ -141,6 +156,10 @@ final class Console extends Parser
                 case 'help':
                     $this->args['help'] = $this->getBoolean($key, false);
                     break;
+                case 'V':
+                case 'version':
+                    $this->args['version'] = $this->getBoolean($key, false);
+                    break;
                 case 'j':
                 case 'jobs':
                     $job = (int) $value;
@@ -157,10 +176,15 @@ final class Console extends Parser
             }
         }
 
+        if ($this->args['version']) {
+            $this->output('Docket CronWP v'.$this->app()->version.\PHP_EOL);
+            exit(0);
+        }
+
         if ($this->args['help']) {
             $this->print_banner();
             $this->print_usage();
-            exit(2);
+            exit(0);
         }
 
         if (empty($this->args['wpdir']) || !is_file($this->args['wpdir'].'/wp-load.php')) {
@@ -170,7 +194,7 @@ final class Console extends Parser
         }
 
         if (empty($this->args['wpdir']) || !is_file($this->args['wpdir'].'/wp-load.php')) {
-            $app = basename(DOCKET_CRONWP);
+            $app = $this->app()->name;
             $this->output('No WordPress installation found, run '.$app.' `path/to/wordpress`.'.\PHP_EOL.'Run '.$app.' --help for more options.'.\PHP_EOL, true);
             exit(1);
         }
@@ -256,8 +280,6 @@ final class Console extends Parser
 
     public function run()
     {
-        $this->register_wpload();
-
         $site = $this->strip_proto(get_home_url());
         $lock_key = 'docktcronwp-'.substr(md5($site), 0, 12);
 
@@ -270,8 +292,8 @@ final class Console extends Parser
         }
 
         add_filter(
-            'dcronwp/data',
-            function ($status) use ($lock_file) {
+            'dcronwp/lockfile',
+            function ($lockfile) use ($lock_file) {
                 return $lock_file;
             }
         );
@@ -353,11 +375,11 @@ final class Console extends Parser
             if (!empty($cron) && \is_array($cron)) {
                 _set_cron_array($cron);
             }
-        }
 
-        if (wp_using_ext_object_cache()) {
-            wp_cache_delete('alloptions', 'options');
-            wp_cache_delete('cron', 'options');
+            if (wp_using_ext_object_cache()) {
+                wp_cache_delete('alloptions', 'options');
+                wp_cache_delete('cron', 'options');
+            }
         }
 
         if (is_file($lock_file) && is_writable($lock_file)) {

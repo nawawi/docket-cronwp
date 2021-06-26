@@ -16,8 +16,8 @@
 
 function dc_getdata()
 {
-    $file = apply_filters('dcronwp/data', false);
-    if (!is_file($file)) {
+    $file = apply_filters('dcronwp/lockfile', false);
+    if (!empty($file) && !is_file($file)) {
         return false;
     }
 
@@ -31,8 +31,8 @@ function dc_getdata()
 
 function dc_putdata($data)
 {
-    $file = apply_filters('dcronwp/data', false);
-    if (!is_file($file)) {
+    $file = apply_filters('dcronwp/lockfile', false);
+    if (!empty($file) && !is_file($file)) {
         return false;
     }
 

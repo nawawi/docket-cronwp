@@ -14,7 +14,7 @@ Docket CronWP is a command-line tool for executing WordPress cron events in para
 
 ## Installation
 
-Download the [docket-cronwp.phar](https://github.com/nawawi/docket-cronwp/raw/main/bin/docket-cronwp.phar) using wget or curl.
+Download the [docket-cronwp.phar](https://github.com/nawawi/docket-cronwp/raw/main/bin/docket-cronwp.phar) using `wget` or `curl`.
 
 ```sh
 wget https://github.com/nawawi/docket-cronwp/raw/main/bin/docket-cronwp.phar
@@ -26,11 +26,11 @@ Next, check the Phar file to verify that it’s working:
 php docket-cronwp.phar --help
 ```
 
-To use docket-cronwp.phar from the command line by typing docket-cronwp, make the file executable and move it to somewhere in your PATH. For example:
+To use `docket-cronwp.phar` from the command line by typing `cronwp`, make the file executable and move it to somewhere in your PATH. For example:
 
 ```sh
 chmod +x docket-cronwp.phar
-sudo mv docket-cronwp.phar /usr/local/bin/docket-cronwp
+sudo mv docket-cronwp.phar /usr/local/bin/cronwp
 ```
 
 Disable the built in WordPress cron in `wp-config.php`:
@@ -40,32 +40,38 @@ define( 'DISABLE_WP_CRON', true );
 
 ## Usage
 ```
-docket-cronwp -h
+cronwp -h
 
-Docket CronWP v1.0.3. Execute WordPress cron events in parallel.
+Docket CronWP v1.0.3
+Execute WordPress cron events in parallel.
 
-Usage: docket-cronwp.php [<path>|<option>]
+Usage:
+  cronwp [<path>|<options>]
+
+Path:
+  Path to the WordPress files.
 
 Options:
   -p --path <path>      Path to the WordPress files.
   -j --jobs <number>    Run number of events in parallel.
   -a --run-now          Run all cron event.
   -t --dry-run          Run without execute cron event.
+  -h --help             Display this help message.
   -q --quiet            Suppress informational messages.
-  -h --help             Display this help and exit.
+  -V --version          Display version.
 ```
 
 ## Example
 Run WordPress cron with 3 events execute in parallel.
 
 ```sh
-docket-cronwp /path-to/wordpress --jobs 3
+cronwp /path-to/wordpress --jobs 3
 ```
 
 Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron.  
 
 ```
-*/5 * * * * root /usr/local/bin/docket-cronwp /path-to/wordpress -j3 &>/dev/null
+*/5 * * * * root /usr/local/bin/cronwp /path-to/wordpress -j3 &>/dev/null
 ```
 
 Replace **root** with web server user to avoid issue with filesystem permission.
