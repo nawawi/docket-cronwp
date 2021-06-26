@@ -355,6 +355,11 @@ final class Console extends Parser
             }
         }
 
+        if (wp_using_ext_object_cache()) {
+            wp_cache_delete('alloptions', 'options');
+            wp_cache_delete('cron', 'options');
+        }
+
         if (is_file($lock_file) && is_writable($lock_file)) {
             @unlink($lock_file);
         }
