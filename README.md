@@ -42,7 +42,7 @@ define( 'DISABLE_WP_CRON', true );
 ```
 cronwp -h
 
-Docket CronWP v1.0.3
+Docket CronWP v1.0.4
 Execute WordPress cron events in parallel.
 
 Usage:
@@ -62,13 +62,34 @@ Options:
 ```
 
 ## Example
-Run WordPress cron with 3 events execute in parallel.
+Run WordPress cron with 3 events execute in parallel:
 
 ```sh
 cronwp /path-to/wordpress --jobs 3
 ```
 
-Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron.  
+Results:
+```
+Executed the cron event 'wp_https_detection' in 0.006s
+[
+    hook => wp_https_detection
+    timer_start => 1624752922.008
+    timer_stop => 1624752922.014
+    status => true
+    pid => 350128
+]
+
+Executed the cron event 'wp_update_plugins' in 0.094s
+[
+    hook => wp_update_plugins
+    timer_start => 1624752922.917
+    timer_stop => 1624752923.011
+    status => true
+    pid => 350135
+]
+```
+
+Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron: 
 
 ```
 */5 * * * * root /usr/local/bin/cronwp /path-to/wordpress -j3 &>/dev/null

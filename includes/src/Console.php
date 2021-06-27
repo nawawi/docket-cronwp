@@ -302,7 +302,7 @@ final class Console extends Parser
             $result = $this->proc_get($this->key, $key);
 
             if (!$this->args['quiet']) {
-                $time = ($result['time_end'] - $result['timer_start']);
+                $time = ($result['timer_stop'] - $result['timer_start']);
                 $this->output('Executed the cron event \''.$key.'\' in '.number_format($time, 3).'s'.\PHP_EOL);
             }
 
@@ -420,12 +420,12 @@ final class Console extends Parser
                                 $status = false;
                                 $error = $e->getMessage();
                             }
-                            $time_end = sprintf('%.3F', microtime(true));
+                            $timer_stop = sprintf('%.3F', microtime(true));
 
                             $data = [
                                 'hook' => $hook,
                                 'timer_start' => $timer_start,
-                                'time_end' => $time_end,
+                                'timer_stop' => $timer_stop,
                                 'status' => $status,
                             ];
                             if (!$status && !empty($error)) {
