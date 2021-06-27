@@ -15,6 +15,7 @@ namespace Nawawi\DocketCronWP;
 final class Console extends Parser
 {
     private $pids = [];
+    private $key;
     private $args = [
         'dcdir' => '',
         'wpdir' => '',
@@ -209,6 +210,41 @@ final class Console extends Parser
         return preg_replace('@^https?://@', '', $url);
     }
 
+    private function proc_store($key, $hook, $data)
+    {
+        $file = sys_get_temp_dir().'/'.$this->key.'-'.substr(md5($hook), 0, 12).'.php';
+
+        if (empty($data) || !\is_array($data)) {
+            return false;
+        }
+
+        $code = '<?php return '.var_export($data, 1).';';
+
+        if (file_put_contents($file, $code, \LOCK_EX)) {
+            chmod($file, 0666);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function proc_get($key, $hook)
+    {
+        $file = sys_get_temp_dir().'/'.$this->key.'-'.substr(md5($hook), 0, 12).'.php';
+        if (empty($file) || !is_file($file)) {
+            return false;
+        }
+
+        $data = include $file;
+        unlink($file);
+        if (!empty($data) && \is_array($data)) {
+            return $data;
+        }
+
+        return false;
+    }
+
     private function proc_fork($name, $callback)
     {
         if (!\is_callable($callback)) {
@@ -232,6 +268,20 @@ final class Console extends Parser
         exit(0);
     }
 
+    private function result_export($data)
+    {
+        $data_e = var_export($data, true);
+        $data_e = str_replace('Requests_Utility_CaseInsensitiveDictionary::__set_state(', '', $data_e);
+
+        $data_e = preg_replace('/^([ ]*)(.*)/m', '$1$1$2', $data_e);
+        $data_r = preg_split("/\r\n|\n|\r/", $data_e);
+
+        $data_r = preg_replace(['/\s*array\s\($/', '/\)(,)?$/', '/\s=>\s$/'], [null, ']$1', ' => ['], $data_r);
+        $data = implode(\PHP_EOL, array_filter(['['] + $data_r));
+
+        return str_replace([',', "'"], '', $data);
+    }
+
     private function proc_wait()
     {
         if (empty($this->pids)) {
@@ -244,10 +294,20 @@ final class Console extends Parser
                 continue;
             }
 
-            $pid = pcntl_waitpid($this->pids[$key], $status, \WNOHANG);
+            $pid = pcntl_waitpid($this->pids[$key], $status);
             if (-1 === $pid || $pid > 0) {
                 unset($this->pids[$key]);
             }
+
+            $result = $this->proc_get($this->key, $key);
+
+            if (!$this->args['quiet']) {
+                $time = ($result['time_end'] - $result['timer_start']);
+                $this->output('Executed the cron event \''.$key.'\' in '.number_format($time, 3).'s'.\PHP_EOL);
+            }
+
+            $result['pid'] = $pid;
+            $this->output($this->result_export($result).\PHP_EOL.\PHP_EOL);
         }
 
         return $this->pids;
@@ -281,9 +341,9 @@ final class Console extends Parser
     public function run()
     {
         $site = $this->strip_proto(get_home_url());
-        $lock_key = 'docktcronwp-'.substr(md5($site), 0, 12);
+        $this->key = 'dcronwp-'.substr(md5($site), 0, 12);
 
-        $lock_file = sys_get_temp_dir().'/'.$lock_key.'-data.php';
+        $lock_file = sys_get_temp_dir().'/'.$this->key.'-data.php';
         $stmp = time() + 120;
 
         if (is_file($lock_file) && is_writable($lock_file) && $stmp > @filemtime($lock_file)) {
@@ -349,13 +409,29 @@ final class Console extends Parser
 
                 $this->proc_fork(
                     $hook,
-                    function () use ($hook, $args, $cnt) {
-                        if (!$this->args['quiet']) {
-                            $this->output('Executed the cron event (#'.$cnt.'): '.$hook.\PHP_EOL);
-                        }
-
+                    function () use ($hook, $args) {
                         if (!$this->args['dryrun']) {
-                            do_action_ref_array($hook, $args);
+                            $timer_start = sprintf('%.3F', microtime(true));
+                            $status = true;
+                            $error = '';
+                            try {
+                                do_action_ref_array($hook, $args);
+                            } catch (\Throwable $e) {
+                                $status = false;
+                                $error = $e->getMessage();
+                            }
+                            $time_end = sprintf('%.3F', microtime(true));
+
+                            $data = [
+                                'hook' => $hook,
+                                'timer_start' => $timer_start,
+                                'time_end' => $time_end,
+                                'status' => $status,
+                            ];
+                            if (!$status && !empty($error)) {
+                                $data['error'] = $error;
+                            }
+                            $this->proc_store($this->key, $hook, $data);
                         }
                     }
                 );

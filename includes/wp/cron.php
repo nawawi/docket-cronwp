@@ -17,7 +17,7 @@
 function dc_getdata()
 {
     $file = apply_filters('dcronwp/lockfile', false);
-    if (!empty($file) && !is_file($file)) {
+    if (empty($file) || !is_file($file)) {
         return false;
     }
 
@@ -32,17 +32,19 @@ function dc_getdata()
 function dc_putdata($data)
 {
     $file = apply_filters('dcronwp/lockfile', false);
-    if (!empty($file) && !is_file($file)) {
-        return false;
-    }
-
     if (empty($data) || !\is_array($data)) {
         return false;
     }
 
     $code = '<?php return '.var_export($data, 1).';';
 
-    return file_put_contents($file, $code, \LOCK_EX);
+    if (file_put_contents($file, $code, \LOCK_EX)) {
+        chmod($file, 0666);
+
+        return true;
+    }
+
+    return false;
 }
 
 function dc_wp_schedule_event($timestamp, $recurrence, $hook, $args = [], $wp_error = false)
