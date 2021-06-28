@@ -205,6 +205,12 @@ final class Console
 
         require_once $wpload;
         require_once $wpcron;
+
+        $error_reporting = error_reporting();
+        error_reporting($error_reporting & ~\E_WARNING & ~\E_NOTICE);
+        if (isset($GLOBALS['wpdb']) && \is_object($GLOBALS['wpdb'])) {
+            $GLOBALS['wpdb']->suppress_errors(true);
+        }
     }
 
     public function run()
