@@ -16,7 +16,7 @@ if ('cli' !== \PHP_SAPI) {
 
 \defined('DOCKET_CRONWP') && exit;
 
-\define('DOCKET_CRONWP_VERSION', '1.0.4');
+\define('DOCKET_CRONWP_VERSION', '1.0.5');
 \define('DOCKET_CRONWP_DIR', __DIR__);
 \define('DOCKET_CRONWP', !empty($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : __FILE__);
 require __DIR__.'/includes/load.php';

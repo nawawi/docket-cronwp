@@ -22,8 +22,10 @@ class ComposerStaticInit1d00991b6227419f508f6e3679679277
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'Nawawi\\DocketCronWP\\Bepart' => __DIR__ . '/../../..' . '/includes/src/Bepart.php',
         'Nawawi\\DocketCronWP\\Console' => __DIR__ . '/../../..' . '/includes/src/Console.php',
         'Nawawi\\DocketCronWP\\Parser' => __DIR__ . '/../../..' . '/includes/src/Parser.php',
+        'Nawawi\\DocketCronWP\\Process' => __DIR__ . '/../../..' . '/includes/src/Process.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

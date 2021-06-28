@@ -1,4 +1,5 @@
-# ![Docket CronWP](./.docketcache.com/icon-128x128.png) Docket CronWP
+![Docket CronWP](./.docketcache.com/icon-128x128.png)
+# Docket CronWP
 
 Execute WordPress cron events in parallel.
 
@@ -42,7 +43,7 @@ define( 'DISABLE_WP_CRON', true );
 ```
 cronwp -h
 
-Docket CronWP v1.0.4
+Docket CronWP v1.0.5
 Execute WordPress cron events in parallel.
 
 Usage:
@@ -68,24 +69,46 @@ Run WordPress cron with 3 events execute in parallel:
 cronwp /path-to/wordpress --jobs 3
 ```
 
-Results:
+Output:
 ```
-Executed the cron event 'wp_https_detection' in 0.006s
+Executed the cron event 'wp_update_plugins' in 2.163s
 [
-    hook => wp_https_detection
-    timer_start => 1624752922.008
-    timer_stop => 1624752922.014
+    pid => 43406
+    time => 2021-06-28 02:14:53
+    hook => wp_update_plugins
+    timer_start => 1624846493.252183
+    timer_stop => 1624846495.415512
     status => true
-    pid => 350128
 ]
 
-Executed the cron event 'wp_update_plugins' in 0.094s
+Executed the cron event 'wp_update_themes' in 0.006s
 [
-    hook => wp_update_plugins
-    timer_start => 1624752922.917
-    timer_stop => 1624752923.011
+    pid => 43407
+    time => 2021-06-28 02:14:53
+    hook => wp_update_themes
+    timer_start => 1624846493.253142
+    timer_stop => 1624846493.259058
     status => true
-    pid => 350135
+]
+
+Executed the cron event 'wp_scheduled_delete' in 0.003s
+[
+    pid => 43408
+    time => 2021-06-28 02:14:53
+    hook => wp_scheduled_delete
+    timer_start => 1624846493.254066
+    timer_stop => 1624846493.256793
+    status => true
+]
+
+Executed the cron event 'delete_expired_transients' in 0.000s
+[
+    pid => 43418
+    time => 2021-06-28 02:14:55
+    hook => delete_expired_transients
+    timer_start => 1624846495.438424
+    timer_stop => 1624846495.438591
+    status => true
 ]
 ```
 

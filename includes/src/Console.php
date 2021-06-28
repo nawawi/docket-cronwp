@@ -12,14 +12,18 @@ namespace Nawawi\DocketCronWP;
 
 \defined('DOCKET_CRONWP') || exit;
 
-final class Console extends Parser
+final class Console
 {
+    use Bepart;
+    use Parser;
+    use Process;
+
     private $pids = [];
     private $key;
     private $args = [
         'dcdir' => '',
         'wpdir' => '',
-        'job' => 5,
+        'job' => 3,
         'quiet' => false,
         'dryrun' => false,
         'network' => false,
@@ -48,33 +52,6 @@ final class Console extends Parser
             $this->output('Docket CronWP requires pcntl extension.'.\PHP_EOL);
             exit(2);
         }
-    }
-
-    private function normalize_path($path)
-    {
-        $wrapper = '';
-        $scheme_separator = strpos($path, '://');
-        if (false !== $scheme_separator) {
-            $stream = substr($path, 0, $scheme_separator);
-            if (\in_array($stream, stream_get_wrappers(), true)) {
-                list($wrapper, $path) = explode('://', $path, 2);
-                $wrapper .= '://';
-            }
-        }
-
-        $path = str_replace('\\', '/', $path);
-        $path = preg_replace('|(?<=.)/+|', '/', $path);
-        if (':' === substr($path, 1, 1)) {
-            $path = ucfirst($path);
-        }
-
-        return $wrapper.$path;
-    }
-
-    private function output($text, $is_error = false)
-    {
-        $fd = $is_error ? \STDERR : \STDOUT;
-        fwrite($fd, $text);
     }
 
     private function register_wpdir($params)
@@ -205,114 +182,6 @@ final class Console extends Parser
         }
     }
 
-    private function strip_proto($url)
-    {
-        return preg_replace('@^https?://@', '', $url);
-    }
-
-    private function proc_store($key, $hook, $data)
-    {
-        $file = sys_get_temp_dir().'/'.$this->key.'-'.substr(md5($hook), 0, 12).'.php';
-
-        if (empty($data) || !\is_array($data)) {
-            return false;
-        }
-
-        $code = '<?php return '.var_export($data, 1).';';
-
-        if (file_put_contents($file, $code, \LOCK_EX)) {
-            chmod($file, 0666);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private function proc_get($key, $hook)
-    {
-        $file = sys_get_temp_dir().'/'.$this->key.'-'.substr(md5($hook), 0, 12).'.php';
-        if (empty($file) || !is_file($file)) {
-            return false;
-        }
-
-        $data = include $file;
-        unlink($file);
-        if (!empty($data) && \is_array($data)) {
-            return $data;
-        }
-
-        return false;
-    }
-
-    private function proc_fork($name, $callback)
-    {
-        if (!\is_callable($callback)) {
-            $this->output($callback.' is not callable'.\PHP_EOL, true);
-
-            return false;
-        }
-
-        $pid = pcntl_fork();
-        if (-1 === $pid) {
-            $this->output('Failed to fork the cron event '.$name.\PHP_EOL);
-
-            return false;
-        }
-        if ($pid) {
-            $this->pids[$name] = $pid;
-
-            return true;
-        }
-        \call_user_func($callback);
-        exit(0);
-    }
-
-    private function result_export($data)
-    {
-        $data_e = var_export($data, true);
-        $data_e = str_replace('Requests_Utility_CaseInsensitiveDictionary::__set_state(', '', $data_e);
-
-        $data_e = preg_replace('/^([ ]*)(.*)/m', '$1$1$2', $data_e);
-        $data_r = preg_split("/\r\n|\n|\r/", $data_e);
-
-        $data_r = preg_replace(['/\s*array\s\($/', '/\)(,)?$/', '/\s=>\s$/'], [null, ']$1', ' => ['], $data_r);
-        $data = implode(\PHP_EOL, array_filter(['['] + $data_r));
-
-        return str_replace([',', "'"], '', $data);
-    }
-
-    private function proc_wait()
-    {
-        if (empty($this->pids)) {
-            return false;
-        }
-
-        $pids = array_keys($this->pids);
-        foreach ($pids as $key) {
-            if (!isset($this->pids[$key])) {
-                continue;
-            }
-
-            $pid = pcntl_waitpid($this->pids[$key], $status);
-            if (-1 === $pid || $pid > 0) {
-                unset($this->pids[$key]);
-            }
-
-            $result = $this->proc_get($this->key, $key);
-
-            if (!$this->args['quiet']) {
-                $time = ($result['timer_stop'] - $result['timer_start']);
-                $this->output('Executed the cron event \''.$key.'\' in '.number_format($time, 3).'s'.\PHP_EOL);
-            }
-
-            $result['pid'] = $pid;
-            $this->output($this->result_export($result).\PHP_EOL.\PHP_EOL);
-        }
-
-        return $this->pids;
-    }
-
     private function register_wpload()
     {
         if (!isset($_SERVER['HTTP_HOST'])) {
@@ -341,9 +210,9 @@ final class Console extends Parser
     public function run()
     {
         $site = $this->strip_proto(get_home_url());
-        $this->key = 'dcronwp-'.substr(md5($site), 0, 12);
+        $this->key = 'dcronwp-'.$this->get_hash($site);
 
-        $lock_file = sys_get_temp_dir().'/'.$this->key.'-data.php';
+        $lock_file = $this->lockpath().$this->key.'-data.php';
         $stmp = time() + 120;
 
         if (is_file($lock_file) && is_writable($lock_file) && $stmp > @filemtime($lock_file)) {
@@ -411,23 +280,35 @@ final class Console extends Parser
                     $hook,
                     function () use ($hook, $args) {
                         if (!$this->args['dryrun']) {
-                            $timer_start = sprintf('%.3F', microtime(true));
+                            $timer_start = microtime(true);
                             $status = true;
                             $error = '';
+                            $content = '';
+                            $atime = date('Y-m-d H:i:s');
                             try {
+                                ob_start();
                                 do_action_ref_array($hook, $args);
+                                $content = ob_get_contents();
+                                ob_end_clean();
                             } catch (\Throwable $e) {
                                 $status = false;
                                 $error = $e->getMessage();
                             }
-                            $timer_stop = sprintf('%.3F', microtime(true));
+                            $timer_stop = microtime(true);
 
                             $data = [
+                                'pid' => '',
+                                'time' => $atime,
                                 'hook' => $hook,
                                 'timer_start' => $timer_start,
                                 'timer_stop' => $timer_stop,
                                 'status' => $status,
                             ];
+
+                            if ('' !== $content) {
+                                $data['output'] = trim($content);
+                            }
+
                             if (!$status && !empty($error)) {
                                 $data['error'] = $error;
                             }

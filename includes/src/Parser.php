@@ -18,7 +18,7 @@ namespace Nawawi\DocketCronWP;
 
 \defined('DOCKET_CRONWP') || exit;
 
-class Parser
+trait Parser
 {
     private $boolParamSet = [
         'y' => true,

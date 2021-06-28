@@ -7,6 +7,8 @@ $baseDir = dirname(dirname($vendorDir));
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+    'Nawawi\\DocketCronWP\\Bepart' => $baseDir . '/includes/src/Bepart.php',
     'Nawawi\\DocketCronWP\\Console' => $baseDir . '/includes/src/Console.php',
     'Nawawi\\DocketCronWP\\Parser' => $baseDir . '/includes/src/Parser.php',
+    'Nawawi\\DocketCronWP\\Process' => $baseDir . '/includes/src/Process.php',
 );

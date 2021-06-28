@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '1123646a648adb7b9e0787d3fdc6668c2a9b5f4a',
+    'reference' => '44fb94c05acfeec32101b20475906cd14c245893',
     'name' => 'nawawi/docket-cronwp',
   ),
   'versions' => 
@@ -41,7 +41,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '1123646a648adb7b9e0787d3fdc6668c2a9b5f4a',
+      'reference' => '44fb94c05acfeec32101b20475906cd14c245893',
     ),
   ),
 );
