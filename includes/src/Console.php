@@ -279,18 +279,20 @@ final class Console
         if (!empty($collect)) {
             $cnt = 0;
             $max = $this->args['job'];
+
             foreach ($collect as $hook => $args) {
                 ++$cnt;
 
                 $this->proc_fork(
                     $hook,
                     function () use ($hook, $args) {
+                        $timer_start = microtime(true);
+                        $status = true;
+                        $error = '';
+                        $content = '';
+                        $atime = date('Y-m-d H:i:s');
+
                         if (!$this->args['dryrun']) {
-                            $timer_start = microtime(true);
-                            $status = true;
-                            $error = '';
-                            $content = '';
-                            $atime = date('Y-m-d H:i:s');
                             try {
                                 ob_start();
                                 do_action_ref_array($hook, $args);
@@ -300,26 +302,28 @@ final class Console
                                 $status = false;
                                 $error = $e->getMessage();
                             }
-                            $timer_stop = microtime(true);
-
-                            $data = [
-                                'pid' => '',
-                                'time' => $atime,
-                                'hook' => $hook,
-                                'timer_start' => $timer_start,
-                                'timer_stop' => $timer_stop,
-                                'status' => $status,
-                            ];
-
-                            if ('' !== $content) {
-                                $data['output'] = trim($content);
-                            }
-
-                            if (!$status && !empty($error)) {
-                                $data['error'] = $error;
-                            }
-                            $this->proc_store($this->key, $hook, $data);
                         }
+
+                        $timer_stop = microtime(true);
+
+                        $data = [
+                            'pid' => '',
+                            'time' => $atime,
+                            'hook' => $hook,
+                            'timer_start' => $timer_start,
+                            'timer_stop' => $timer_stop,
+                            'status' => $this->args['dryrun'] ? 'dry-run' : $status,
+                        ];
+
+                        if ('' !== $content) {
+                            $data['output'] = trim($content);
+                        }
+
+                        if (!$status && !empty($error)) {
+                            $data['error'] = $error;
+                        }
+
+                        $this->proc_store($this->key, $hook, $data);
                     }
                 );
 
