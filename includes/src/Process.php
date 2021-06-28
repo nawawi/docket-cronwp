@@ -68,7 +68,14 @@ trait Process
 
             return true;
         }
+
+        $error_reporting = error_reporting();
+        error_reporting($error_reporting & ~\E_WARNING & ~\E_NOTICE);
+
         \call_user_func($callback);
+
+        error_reporting($error_reporting);
+
         exit(0);
     }
 

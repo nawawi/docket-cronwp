@@ -206,8 +206,6 @@ final class Console
         require_once $wpload;
         require_once $wpcron;
 
-        $error_reporting = error_reporting();
-        error_reporting($error_reporting & ~\E_WARNING & ~\E_NOTICE);
         if (isset($GLOBALS['wpdb']) && \is_object($GLOBALS['wpdb'])) {
             $GLOBALS['wpdb']->suppress_errors(true);
         }
@@ -233,14 +231,35 @@ final class Console
             }
         );
 
-        if ($this->args['runnow']) {
-            $crons = _get_cron_array();
-        } else {
-            $crons = wp_get_ready_cron_jobs();
+        $crons = _get_cron_array();
+        $crons_now = '';
+        if ($this->args['runnow'] && !empty($crons) && \is_array($crons)) {
+            $crons_now = function () use ($crons) {
+                $gmt_time = microtime(true);
+                $keys = array_keys($crons);
+                if (isset($keys[0]) && $keys[0] > $gmt_time) {
+                    return [];
+                }
+
+                $results = [];
+                foreach ($crons as $timestamp => $cronhooks) {
+                    if ($timestamp > $gmt_time) {
+                        break;
+                    }
+                    $results[$timestamp] = $cronhooks;
+                }
+
+                return $results;
+            };
+        }
+
+        if (!$this->args['runnow'] && empty($crons_now)) {
+            $this->output('No cron event ready to run. Try \'--run-now\' to run all now.'.\PHP_EOL);
+            exit(0);
         }
 
         if (empty($crons)) {
-            $this->output('No cron event ready to run. Try \'--run-now\' to run all now.'.\PHP_EOL);
+            $this->output('No cron event available.'.\PHP_EOL);
             exit(0);
         }
 
@@ -251,6 +270,14 @@ final class Console
                 exit(0);
             }
         }
+
+        $wp_get_schedules = wp_get_schedules();
+        add_filter(
+            'dcronwp/wp_get_schedules',
+            function ($arr) use ($wp_get_schedules) {
+                return $wp_get_schedules;
+            }
+        );
 
         $gmt_time = microtime(true);
 
@@ -266,10 +293,14 @@ final class Console
                     $schedule = $v['schedule'];
 
                     if ($schedule) {
-                        dc_wp_reschedule_event($timestamp, $schedule, $hook, $v['args']);
+                        if (false === dc_wp_reschedule_event($timestamp, $schedule, $hook, $v['args'])) {
+                            continue;
+                        }
                     }
 
-                    dc_wp_unschedule_event($timestamp, $hook, $v['args']);
+                    if (false === dc_wp_unschedule_event($timestamp, $hook, $v['args'])) {
+                        continue;
+                    }
 
                     $collect[$hook] = $v['args'];
                 }

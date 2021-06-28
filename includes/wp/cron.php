@@ -292,56 +292,7 @@ function dc_wp_get_scheduled_event($hook, $args = [], $timestamp = null)
 
 function dc_wp_get_schedules()
 {
-    $schedules = [
-        'hourly' => [
-            'interval' => HOUR_IN_SECONDS,
-            'display' => __('Once Hourly'),
-        ],
-        'twicedaily' => [
-            'interval' => 12 * HOUR_IN_SECONDS,
-            'display' => __('Twice Daily'),
-        ],
-        'daily' => [
-            'interval' => DAY_IN_SECONDS,
-            'display' => __('Once Daily'),
-        ],
-        'weekly' => [
-            'interval' => WEEK_IN_SECONDS,
-            'display' => __('Once Weekly'),
-        ],
-    ];
-
-    return array_merge(apply_filters('cron_schedules', []), $schedules);
-}
-
-function dc_wp_get_ready_cron_jobs()
-{
-    $pre = apply_filters('pre_get_ready_cron_jobs', null);
-    if (null !== $pre) {
-        return $pre;
-    }
-
-    $crons = dc__get_cron_array();
-
-    if (false === $crons) {
-        return [];
-    }
-
-    $gmt_time = microtime(true);
-    $keys = array_keys($crons);
-    if (isset($keys[0]) && $keys[0] > $gmt_time) {
-        return [];
-    }
-
-    $results = [];
-    foreach ($crons as $timestamp => $cronhooks) {
-        if ($timestamp > $gmt_time) {
-            break;
-        }
-        $results[$timestamp] = $cronhooks;
-    }
-
-    return $results;
+    return apply_filters('dcronwp/wp_get_schedules', []);
 }
 
 function dc__get_cron_array()
