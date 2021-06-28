@@ -66,20 +66,20 @@ trait Process
         if ($pid) {
             $this->pids[$name] = $pid;
 
+            // prevent zombie
+            pcntl_wait($status);
+
+            // we're parent, db already close, reconnect
+            $this->wpdb_reconnect();
+
             return true;
         }
 
-        $error_reporting = error_reporting();
-        error_reporting($error_reporting & ~\E_WARNING & ~\E_NOTICE);
-
         \call_user_func($callback);
-
-        error_reporting($error_reporting);
-
         exit(0);
     }
 
-    private function proc_wait()
+    private function proc_wait($cleanup = false)
     {
         if (empty($this->pids)) {
             return false;
@@ -91,10 +91,9 @@ trait Process
                 continue;
             }
 
-            $pid = pcntl_waitpid($this->pids[$key], $status);
-            if (-1 === $pid || $pid > 0) {
-                unset($this->pids[$key]);
-            }
+            $pid = $this->pids[$key];
+            pcntl_waitpid($this->pids[$key], $status);
+            unset($this->pids[$key]);
 
             $result = $this->proc_get($this->key, $key);
             if (!empty($result) && \is_array($result)) {

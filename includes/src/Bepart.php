@@ -66,4 +66,29 @@ trait Bepart
     {
         return $this->normalize_path(sys_get_temp_dir().'/');
     }
+
+    private function wpdb()
+    {
+        if (isset($GLOBALS['wpdb']) && \is_object($GLOBALS['wpdb'])) {
+            return $GLOBALS['wpdb'];
+        }
+
+        return false;
+    }
+
+    private function wpdb_reconnect()
+    {
+        $wpdb = $this->wpdb();
+        if ($wpdb) {
+            $wpdb->db_connect(false);
+        }
+    }
+
+    private function wpdb_suppress_errors()
+    {
+        $wpdb = $this->wpdb();
+        if ($wpdb) {
+            $wpdb->suppress_errors(true);
+        }
+    }
 }

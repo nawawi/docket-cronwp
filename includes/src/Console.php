@@ -188,8 +188,6 @@ final class Console
             $_SERVER['HTTP_HOST'] = '';
         }
 
-        \define('DOING_CRON', true);
-
         $wpload = $this->args['wpdir'].'/wp-load.php';
         $wpcron = $this->args['dcdir'].'/includes/wp/cron.php';
 
@@ -203,12 +201,12 @@ final class Console
             exit(1);
         }
 
+        \define('DOING_CRON', true);
+
         require_once $wpload;
         require_once $wpcron;
 
-        if (isset($GLOBALS['wpdb']) && \is_object($GLOBALS['wpdb'])) {
-            $GLOBALS['wpdb']->suppress_errors(true);
-        }
+        $this->wpdb_suppress_errors();
     }
 
     public function run()
@@ -217,9 +215,9 @@ final class Console
         $this->key = 'dcronwp-'.$this->get_hash($site);
 
         $lock_file = $this->lockpath().$this->key.'-data.php';
-        $stmp = time() + 120;
+        $stmp = time() + 3600;
 
-        if (is_file($lock_file) && is_writable($lock_file) && $stmp > @filemtime($lock_file)) {
+        if (is_file($lock_file) && is_readable($lock_file) && $stmp > @filemtime($lock_file)) {
             $this->output('Process locked, lock file: '.$lock_file."\n");
             exit(1);
         }
@@ -230,6 +228,14 @@ final class Console
                 return $lock_file;
             }
         );
+
+        // ctrl+c
+        pcntl_signal(\SIGINT, function ($signo) use ($lock_file) {
+            if (is_file($lock_file) && is_writable($lock_file)) {
+                @unlink($lock_file);
+            }
+            exit(0);
+        });
 
         $crons = _get_cron_array();
         $crons_now = '';
@@ -258,6 +264,8 @@ final class Console
             exit(0);
         }
 
+        unset($crons_now);
+
         if (empty($crons)) {
             $this->output('No cron event available.'.\PHP_EOL);
             exit(0);
@@ -279,8 +287,13 @@ final class Console
             }
         );
 
-        $gmt_time = microtime(true);
+        $lock_spawn = !\defined('DISABLE_WP_CRON') || !DISABLE_WP_CRON;
+        if ($lock_spawn) {
+            $lock_wp_cron = microtime(true) + 300;
+            set_transient('doing_cron', $lock_wp_cron, 86400);
+        }
 
+        $gmt_time = microtime(true);
         $collect = [];
 
         foreach ($crons as $timestamp => $cronhooks) {
@@ -327,7 +340,7 @@ final class Console
                             try {
                                 ob_start();
                                 do_action_ref_array($hook, $args);
-                                $content = ob_get_contents();
+                                $content = trim(ob_get_contents());
                                 ob_end_clean();
                             } catch (\Throwable $e) {
                                 $status = false;
@@ -347,7 +360,7 @@ final class Console
                         ];
 
                         if ('' !== $content) {
-                            $data['output'] = trim($content);
+                            $data['output'] = $content;
                         }
 
                         if (!$status && !empty($error)) {
@@ -382,6 +395,10 @@ final class Console
 
         if (is_file($lock_file) && is_writable($lock_file)) {
             @unlink($lock_file);
+        }
+
+        if ($lock_spawn) {
+            delete_transient('doing_cron');
         }
 
         exit(0);
