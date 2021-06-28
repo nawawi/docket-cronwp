@@ -43,7 +43,7 @@ define( 'DISABLE_WP_CRON', true );
 ```
 cronwp -h
 
-Docket CronWP v1.0.5
+Docket CronWP v1.0.6
 Execute WordPress cron events in parallel.
 
 Usage:
