@@ -135,7 +135,7 @@ final class Console
                     break;
                 case 'u':
                 case 'url':
-                    if ( !$this->getBoolean($key, false) ) {
+                    if (!$this->getBoolean($key, false)) {
                         $this->args['url'] = $value;
                     }
                     break;
