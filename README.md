@@ -120,6 +120,10 @@ Run WordPress cron with 3 events execute in parallel every 5 minutes using serve
 
 Replace **root** with web server or php-fpm user to avoid issue with filesystem permission.
 
+## Contributions
+
+Please open an [issue](https://github.com/nawawi/docket-cronwp/issues) first to discuss what you would like to change.
+
 ## Sponsor this project
 
 Fund Docket CronWP one-off or recurring payment to support open-source development efforts.  
