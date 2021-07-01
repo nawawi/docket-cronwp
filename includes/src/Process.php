@@ -14,6 +14,8 @@ namespace Nawawi\DocketCronWP;
 
 trait Process
 {
+    private $pids = [];
+
     private function proc_store($key, $hook, $data)
     {
         $file = $this->lockpath().$this->key.'-'.$this->get_hash($hook).'.php';

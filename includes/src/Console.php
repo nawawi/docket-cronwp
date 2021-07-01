@@ -18,7 +18,6 @@ final class Console
     use Parser;
     use Process;
 
-    private $pids = [];
     private $key;
     private $args = [
         'dcdir' => '',
@@ -36,22 +35,8 @@ final class Console
     public function __construct()
     {
         pcntl_async_signals(true);
-        $this->compat_notice();
         $this->register_args();
         $this->register_wpload();
-    }
-
-    private function compat_notice()
-    {
-        if (!(\PHP_VERSION_ID >= 70205)) {
-            $this->output('Docket CronWP requires PHP 7.2.5 or greater.'.\PHP_EOL);
-            exit(2);
-        }
-
-        if (!\extension_loaded('pcntl')) {
-            $this->output('Docket CronWP requires pcntl extension.'.\PHP_EOL);
-            exit(2);
-        }
     }
 
     private function register_wpdir($params)
@@ -96,6 +81,7 @@ final class Console
         $text .= 'Options:'.\PHP_EOL;
         $text .= '  -p --path <path>      Path to the WordPress files.'.\PHP_EOL;
         $text .= '  -j --jobs <number>    Run number of events in parallel.'.\PHP_EOL;
+        $text .= '  -u --url <url>        Multisite target URL.'.\PHP_EOL;
         $text .= '  -a --run-now          Run all cron event.'.\PHP_EOL;
         $text .= '  -t --dry-run          Run without execute cron event.'.\PHP_EOL;
         $text .= '  -h --help             Display this help message.'.\PHP_EOL;
@@ -147,15 +133,17 @@ final class Console
                 case 'network':
                     $this->args['network'] = $this->getBoolean($key, false);
                     break;
-                case 's':
-                case 'site':
-                    $this->args['site'] = $value;
+                case 'u':
+                case 'url':
+                    if ( !$this->getBoolean($key, false) ) {
+                        $this->args['url'] = $value;
+                    }
                     break;
             }
         }
 
         if ($this->args['version']) {
-            $this->output('Docket CronWP v'.$this->app()->version.\PHP_EOL);
+            $this->output($this->app()->version.\PHP_EOL);
             exit(0);
         }
 
@@ -172,8 +160,13 @@ final class Console
         }
 
         if (empty($this->args['wpdir']) || !is_file($this->args['wpdir'].'/wp-load.php')) {
-            $app = $this->app()->name;
-            $this->output('No WordPress installation found, run '.$app.' `path/to/wordpress`.'.\PHP_EOL.'Run '.$app.' --help for more options.'.\PHP_EOL, true);
+            $this->output('No WordPress installation found, run '.$this->app()->name.' `path/to/wordpress`.'.\PHP_EOL, true);
+            $this->output('Run '.$this->app()->name.' --help for more options.'.\PHP_EOL, true);
+            exit(1);
+        }
+
+        if (!empty($this->args['url']) && !filter_var($this->args['url'], \FILTER_VALIDATE_URL)) {
+            $this->output('Invalid url '.$this->args['url'].\PHP_EOL, true);
             exit(1);
         }
 
@@ -184,10 +177,6 @@ final class Console
 
     private function register_wpload()
     {
-        if (!isset($_SERVER['HTTP_HOST'])) {
-            $_SERVER['HTTP_HOST'] = '';
-        }
-
         $wpload = $this->args['wpdir'].'/wp-load.php';
         $wpcron = $this->args['dcdir'].'/includes/wp/cron.php';
 
@@ -199,6 +188,16 @@ final class Console
         if (!@is_file($wpcron)) {
             $this->output('Failed to load: '.$wpcron.\PHP_EOL, true);
             exit(1);
+        }
+
+        $_SERVER['HTTP_HOST'] = '';
+        $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.0';
+        $_SERVER['HTTP_USER_AGENT'] = '';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        if (!empty($this->args['url'])) {
+            $_SERVER['HTTP_HOST'] = parse_url($this->args['url'], \PHP_URL_HOST);
         }
 
         \define('DOING_CRON', true);
