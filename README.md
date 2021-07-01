@@ -112,13 +112,21 @@ Executed the cron event 'delete_expired_transients' in 0.000s
 ]
 ```
 
-Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron: 
+Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron. Edit `/etc/crontab` and insert command below: 
 
 ```
 */5 * * * * root /usr/local/bin/cronwp /path-to/wordpress -j3 &>/dev/null
 ```
 
-Replace **root** with web server user to avoid issue with filesystem permission.
+Replace **root** with web server or php-fpm user to avoid issue with filesystem permission.
+
+## Sponsor this project
+
+Fund Docket CronWP one-off or recurring payment to support open-source development efforts.  
+
+[![PayPal](./.docketcache.com/paypalme.png)](https://www.paypal.com/paypalme/ghostbirdme/10usd) 
+[![SecurePay Malaysia](./.docketcache.com/securepay.png)](https://securepay.my/collections/docketcacheproject) 
+[![Bitcoin](./.docketcache.com/bitcoin.png)](https://www.blockchain.com/en/btc/address/3BD96JehFzsdFv4MTmvvgVhfVFLC86414n)
 
 ## License
 
