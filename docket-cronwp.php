@@ -27,7 +27,7 @@ if (!\extension_loaded('pcntl') || !\function_exists('pcntl_fork')) {
 
 \defined('DOCKET_CRONWP') && exit;
 
-\define('DOCKET_CRONWP_VERSION', '1.0.6');
+\define('DOCKET_CRONWP_VERSION', '1.0.7');
 \define('DOCKET_CRONWP_DIR', __DIR__);
 \define('DOCKET_CRONWP', !empty($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : __FILE__);
 require __DIR__.'/includes/load.php';
