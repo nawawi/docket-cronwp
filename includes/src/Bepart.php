@@ -37,18 +37,24 @@ trait Bepart
 
     private function strip_proto($url)
     {
-        return preg_replace('@^https?://@', '', $url);
+        return preg_replace('@^https?://@', '', trim($url));
+    }
+
+    private function rowh(string $name, string $pad = ' ', int $minlen = 15)
+    {
+        $len = $minlen - \strlen($name);
+
+        return $name.str_repeat($pad, $len);
     }
 
     private function result_export($data)
     {
-        $data_e = var_export($data, true);
-        $data_e = preg_replace('/^([ ]*)(.*)/m', '$1$1$2', $data_e);
-        $data_r = preg_split("/\r\n|\n|\r/", $data_e);
-        $data_r = preg_replace(['/\s*array\s\($/', '/\)(,)?$/', '/\s=>\s$/'], [null, ']$1', ' => ['], $data_r);
-        $data = implode(\PHP_EOL, array_filter(['['] + $data_r));
+        $output = '';
+        foreach ($data as $name => $value) {
+            $output .= $this->rowh($name).': '.$value.\PHP_EOL;
+        }
 
-        return str_replace([',', "'"], '', $data);
+        return $output;
     }
 
     private function output($text, $is_error = false)

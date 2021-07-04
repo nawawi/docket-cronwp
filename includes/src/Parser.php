@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Docket CronWP.
  *
@@ -20,7 +19,7 @@ namespace Nawawi\DocketCronWP;
 
 trait Parser
 {
-    private $boolParamSet = [
+    private $bool_param = [
         'y' => true,
         'n' => false,
         'yes' => true,
@@ -33,11 +32,11 @@ trait Parser
         'off' => false,
     ];
 
-    private $parsedCommands = [];
+    private $parsed_cmds = [];
 
     public function has($key)
     {
-        return isset($this->parsedCommands[$key]);
+        return isset($this->parsed_cmds[$key]);
     }
 
     public function get($key, $default = null)
@@ -46,101 +45,98 @@ trait Parser
             return $default;
         }
 
-        return $this->parsedCommands[$key];
+        return $this->parsed_cmds[$key];
     }
 
-    public function getBoolean(string $key, bool $default = false)
+    public function get_bool(string $key, bool $default = false)
     {
         if (!$this->has($key)) {
             return $default;
         }
 
-        if (\is_bool($this->parsedCommands[$key]) || \is_int($this->parsedCommands[$key])) {
-            return (bool) $this->parsedCommands[$key];
+        if (\is_bool($this->parsed_cmds[$key]) || \is_int($this->parsed_cmds[$key])) {
+            return (bool) $this->parsed_cmds[$key];
         }
 
-        return $this->getCoalescingDefault($this->parsedCommands[$key], $default);
+        return $this->get_all_default($this->parsed_cmds[$key], $default);
     }
 
     public function parse(array $argv = [])
     {
         if (empty($argv)) {
-            $argv = $this->getArgvFromServer();
+            $argv = $this->get_argv_server();
         }
 
         array_shift($argv);
-        $this->parsedCommands = [];
+        $this->parsed_cmds = [];
 
-        return $this->handleArguments($argv);
+        return $this->handle_argv($argv);
     }
 
-    private function getArgvFromServer()
+    private function get_argv_server()
     {
         return empty($_SERVER['argv']) ? [] : $_SERVER['argv'];
     }
 
-    private function getCoalescingDefault(string $value, bool $default)
+    private function get_all_default(string $value, bool $default)
     {
-        return $this->boolParamSet[$value] ?? $default;
+        return $this->bool_param[$value] ?? $default;
     }
 
-    private function getParamWithEqual(string $arg, int $eqPos)
+    private function get_param_equal(string $arg, int $offset)
     {
-        $key = $this->stripSlashes(substr($arg, 0, $eqPos));
-        $out[$key] = substr($arg, $eqPos + 1);
+        $key = $this->strip_slashes(substr($arg, 0, $offset));
+        $out[$key] = substr($arg, $offset + 1);
 
         return $out;
     }
 
-    private function handleArguments(array $argv)
+    private function handle_argv(array $argv)
     {
         for ($i = 0, $j = \count($argv); $i < $j; ++$i) {
-            // --foo --bar=baz
             if ('--' === substr($argv[$i], 0, 2)) {
-                if ($this->parseAndMergeCommandWithEqualSign($argv[$i])) {// --bar=baz
+                if ($this->parse_merge_cmds_equalsign($argv[$i])) {
                     continue;
                 }
 
-                $key = $this->stripSlashes($argv[$i]);
-                if ($i + 1 < $j && '-' !== $argv[$i + 1][0]) {// --foo value
-                    $this->parsedCommands[$key] = $argv[$i + 1];
+                $key = $this->strip_slashes($argv[$i]);
+                if ($i + 1 < $j && '-' !== $argv[$i + 1][0]) {
+                    $this->parsed_cmds[$key] = $argv[$i + 1];
                     ++$i;
                     continue;
                 }
-                $this->parsedCommands[$key] = $this->parsedCommands[$key] ?? true;
+                $this->parsed_cmds[$key] = $this->parsed_cmds[$key] ?? true;
                 continue;
             }
 
-            // -k=value -abc
             if ('-' === substr($argv[$i], 0, 1)) {
-                if ($this->parseAndMergeCommandWithEqualSign($argv[$i])) {
+                if ($this->parse_merge_cmds_equalsign($argv[$i])) {
                     continue;
                 }
 
-                // -a value1 -abc value2 -abc
-                $hasNextElementDash = $i + 1 < $j && '-' !== $argv[$i + 1][0] ? false : true;
+                $next_dash = $i + 1 < $j && '-' !== $argv[$i + 1][0] ? false : true;
                 foreach (str_split(substr($argv[$i], 1)) as $char) {
-                    $this->parsedCommands[$char] = $hasNextElementDash ? true : $argv[$i + 1];
+                    $this->parsed_cmds[$char] = $next_dash ? true : $argv[$i + 1];
                 }
 
-                if (!$hasNextElementDash) {// -a value1 -abc value2
+                if (!$next_dash) {
                     ++$i;
                 }
                 continue;
             }
 
-            $this->parsedCommands[] = $argv[$i];
+            $this->parsed_cmds[] = $argv[$i];
         }
 
-        return $this->parsedCommands;
+        return $this->parsed_cmds;
     }
 
-    private function parseAndMergeCommandWithEqualSign(string $command)
+    private function parse_merge_cmds_equalsign(string $cmd)
     {
-        $eqPos = strpos($command, '=');
+        $offset = strpos($cmd, '=');
 
-        if (false !== $eqPos) {
-            $this->parsedCommands = array_merge($this->parsedCommands, $this->getParamWithEqual($command, $eqPos));
+        if (false !== $offset) {
+            $this->parsed_cmds = array_merge($this->parsed_cmds, $this->get_param_equal($cmd, $offset));
 
             return true;
         }
@@ -148,19 +144,19 @@ trait Parser
         return false;
     }
 
-    private function stripSlashes(string $argument)
+    private function strip_slashes(string $arg)
     {
-        if ('-' !== substr($argument, 0, 1)) {
-            return $argument;
+        if ('-' !== substr($arg, 0, 1)) {
+            return $arg;
         }
 
-        $argument = substr($argument, 1);
+        $arg = substr($arg, 1);
 
-        return $this->stripSlashes($argument);
+        return $this->strip_slashes($arg);
     }
 
-    public function getParsedCommands()
+    public function getparsed_cmds()
     {
-        return $this->parsedCommands;
+        return $this->parsed_cmds;
     }
 }

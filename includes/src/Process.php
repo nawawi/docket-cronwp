@@ -102,8 +102,10 @@ trait Process
                 if (!$this->args['quiet']) {
                     $time = ($result['timer_stop'] - $result['timer_start']);
                     $this->output('Executed the cron event \''.$key.'\' in '.number_format($time, 3).'s'.\PHP_EOL);
-                    $result['pid'] = $pid;
-                    $this->output($this->result_export($result).\PHP_EOL.\PHP_EOL);
+                    if ($this->args['verbose']) {
+                        $result['pid'] = $pid;
+                        $this->output($this->result_export($result).\PHP_EOL);
+                    }
                 }
             }
         }

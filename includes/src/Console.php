@@ -19,6 +19,7 @@ final class Console
     use Process;
 
     private $key;
+    private $prefix = 'dcronwp-';
     private $args = [
         'dcdir' => '',
         'wpdir' => '',
@@ -30,6 +31,7 @@ final class Console
         'site' => '',
         'help' => false,
         'version' => false,
+        'verbose' => false,
     ];
 
     public function __construct()
@@ -60,22 +62,23 @@ final class Console
     private function app()
     {
         return (object) [
-             'name' => basename(DOCKET_CRONWP),
-             'version' => DOCKET_CRONWP_VERSION,
-             'path' => DOCKET_CRONWP_DIR,
+             'name' => DOCKET_CRONWP['NAME'],
+             'bin' => basename(DOCKET_CRONWP['SELF']),
+             'version' => DOCKET_CRONWP['VERSION'],
+             'path' => DOCKET_CRONWP['ROOT'],
          ];
     }
 
     private function print_banner()
     {
-        $this->output(\PHP_EOL.'Docket CronWP v'.$this->app()->version.\PHP_EOL.'Execute WordPress cron events in parallel.'.\PHP_EOL.\PHP_EOL);
+        $this->output(\PHP_EOL.sprintf('%s v%s.', $this->app()->name, $this->app()->version).\PHP_EOL.'Execute WordPress cron events in parallel.'.\PHP_EOL.\PHP_EOL);
     }
 
     private function print_usage()
     {
         $text = '';
         $text .= 'Usage:'.\PHP_EOL;
-        $text .= '  '.$this->app()->name.' [<path>|<options>]'.\PHP_EOL.\PHP_EOL;
+        $text .= '  '.$this->app()->bin.' [<path>|<options>]'.\PHP_EOL.\PHP_EOL;
         $text .= 'Path:'.\PHP_EOL;
         $text .= '  Path to the WordPress files.'.\PHP_EOL.\PHP_EOL;
         $text .= 'Options:'.\PHP_EOL;
@@ -85,14 +88,18 @@ final class Console
         $text .= '  -a --run-now          Run all cron event.'.\PHP_EOL;
         $text .= '  -t --dry-run          Run without execute cron event.'.\PHP_EOL;
         $text .= '  -h --help             Display this help message.'.\PHP_EOL;
-        $text .= '  -q --quiet            Suppress informational messages.'.\PHP_EOL;
+        $text .= '  -q --quiet            Suppress output.'.\PHP_EOL;
+        $text .= '  -v --verbose          Display additional output.'.\PHP_EOL;
         $text .= '  -V --version          Display version.'.\PHP_EOL;
         $this->output($text);
     }
 
     private function print_args()
     {
-        $text = 'Path: '.$this->args['wpdir'].\PHP_EOL;
+        $text = $this->rowh($this->app()->name).': '.$this->app()->version.\PHP_EOL;
+        $text .= $this->rowh('Path').': '.$this->args['wpdir'].\PHP_EOL;
+        $text .= $this->rowh('Jobs').': '.$this->args['job'].\PHP_EOL;
+        $text .= \PHP_EOL;
         $this->output($text);
     }
 
@@ -106,23 +113,27 @@ final class Console
             switch ($key) {
                 case 't':
                 case 'dry-run':
-                    $this->args['dryrun'] = $this->getBoolean($key, false);
+                    $this->args['dryrun'] = $this->get_bool($key, false);
                     break;
                 case 'q':
                 case 'quiet':
-                    $this->args['quiet'] = $this->getBoolean($key, false);
+                    $this->args['quiet'] = $this->get_bool($key, false);
                     break;
                 case 'a':
                 case 'run-now':
-                    $this->args['runnow'] = $this->getBoolean($key, false);
+                    $this->args['runnow'] = $this->get_bool($key, false);
                     break;
                 case 'h':
                 case 'help':
-                    $this->args['help'] = $this->getBoolean($key, false);
+                    $this->args['help'] = $this->get_bool($key, false);
                     break;
                 case 'V':
                 case 'version':
-                    $this->args['version'] = $this->getBoolean($key, false);
+                    $this->args['version'] = $this->get_bool($key, false);
+                    break;
+                case 'v':
+                case 'verbose':
+                    $this->args['verbose'] = $this->get_bool($key, false);
                     break;
                 case 'j':
                 case 'jobs':
@@ -131,11 +142,11 @@ final class Console
                     break;
                 case 'n':
                 case 'network':
-                    $this->args['network'] = $this->getBoolean($key, false);
+                    $this->args['network'] = $this->get_bool($key, false);
                     break;
                 case 'u':
                 case 'url':
-                    if (!$this->getBoolean($key, false)) {
+                    if (!$this->get_bool($key, false)) {
                         $this->args['url'] = $value;
                     }
                     break;
@@ -160,18 +171,14 @@ final class Console
         }
 
         if (empty($this->args['wpdir']) || !is_file($this->args['wpdir'].'/wp-load.php')) {
-            $this->output('No WordPress installation found, run '.$this->app()->name.' `path/to/wordpress`.'.\PHP_EOL, true);
-            $this->output('Run '.$this->app()->name.' --help for more options.'.\PHP_EOL, true);
+            $this->output('No WordPress installation found, run '.$this->app()->bin.' `path/to/wordpress`.'.\PHP_EOL, true);
+            $this->output('Run '.$this->app()->bin.' --help for more options.'.\PHP_EOL, true);
             exit(1);
         }
 
         if (!empty($this->args['url']) && !filter_var($this->args['url'], \FILTER_VALIDATE_URL)) {
             $this->output('Invalid url '.$this->args['url'].\PHP_EOL, true);
             exit(1);
-        }
-
-        if (!$this->args['quiet']) {
-            $this->print_args();
         }
     }
 
@@ -208,16 +215,47 @@ final class Console
         $this->wpdb_suppress_errors();
     }
 
+    private function cleanup()
+    {
+        $files = glob($this->lockpath().$this->prefix.'*.php', \GLOB_MARK | \GLOB_NOSORT);
+        if (!empty($files) && \is_array($files)) {
+            foreach ($files as $file) {
+                if (@is_file($file) && @is_writable($file)) {
+                    @unlink($file);
+                }
+            }
+        }
+    }
+
+    private function crons_now($crons)
+    {
+        $gmt_time = microtime(true);
+        $keys = array_keys($crons);
+        if (isset($keys[0]) && $keys[0] > $gmt_time) {
+            return [];
+        }
+
+        $results = [];
+        foreach ($crons as $timestamp => $cronhooks) {
+            if ($timestamp > $gmt_time) {
+                break;
+            }
+            $results[$timestamp] = $cronhooks;
+        }
+
+        return $results;
+    }
+
     public function run()
     {
         $site = $this->strip_proto(get_home_url());
-        $this->key = 'dcronwp-'.$this->get_hash($site);
+        $this->key = $this->prefix.$this->get_hash($site);
 
         $lock_file = $this->lockpath().$this->key.'-data.php';
         $stmp = time() + 3600;
 
         if (is_file($lock_file) && is_readable($lock_file) && $stmp > @filemtime($lock_file)) {
-            $this->output('Process locked, lock file: '.$lock_file."\n");
+            $this->output('Process locked, lock file: '.$lock_file.\PHP_EOL);
             exit(1);
         }
 
@@ -228,47 +266,30 @@ final class Console
             }
         );
 
-        // ctrl+c
-        pcntl_signal(\SIGINT, function ($signo) use ($lock_file) {
-            if (is_file($lock_file) && is_writable($lock_file)) {
-                @unlink($lock_file);
-            }
-            exit(0);
-        });
-
         $crons = _get_cron_array();
-        $crons_now = '';
-        if ($this->args['runnow'] && !empty($crons) && \is_array($crons)) {
-            $crons_now = function () use ($crons) {
-                $gmt_time = microtime(true);
-                $keys = array_keys($crons);
-                if (isset($keys[0]) && $keys[0] > $gmt_time) {
-                    return [];
-                }
 
-                $results = [];
-                foreach ($crons as $timestamp => $cronhooks) {
-                    if ($timestamp > $gmt_time) {
-                        break;
-                    }
-                    $results[$timestamp] = $cronhooks;
-                }
-
-                return $results;
-            };
+        if (!$this->args['runnow'] && !empty($crons) && \is_array($crons)) {
+            $crons_now = $this->crons_now($crons);
+            if (empty($crons_now)) {
+                $this->output('No cron event ready to run. Try \'--run-now\' to run all now.'.\PHP_EOL);
+                exit(0);
+            }
         }
-
-        if (!$this->args['runnow'] && empty($crons_now)) {
-            $this->output('No cron event ready to run. Try \'--run-now\' to run all now.'.\PHP_EOL);
-            exit(0);
-        }
-
-        unset($crons_now);
 
         if (empty($crons)) {
             $this->output('No cron event available.'.\PHP_EOL);
             exit(0);
         }
+
+        // ctrl+c
+        pcntl_signal(\SIGINT, function ($signo) use ($lock_file) {
+            $this->output('Exiting.. cleanup lock files.'.\PHP_EOL);
+            if (is_file($lock_file) && is_writable($lock_file)) {
+                @unlink($lock_file);
+            }
+            $this->cleanup();
+            exit(0);
+        });
 
         if (!$this->args['dryrun']) {
             $code = '<?php return '.var_export($crons, 1).';';
@@ -276,6 +297,10 @@ final class Console
                 $this->output('Failed to save cron data.'.\PHP_EOL);
                 exit(0);
             }
+        }
+
+        if (!$this->args['quiet'] && $this->args['verbose']) {
+            $this->print_args();
         }
 
         $wp_get_schedules = wp_get_schedules();
@@ -319,6 +344,8 @@ final class Console
             }
         }
 
+        unset($crons, $cronhooks);
+
         if (!empty($collect)) {
             $cnt = 0;
             $max = $this->args['job'];
@@ -333,7 +360,6 @@ final class Console
                         $status = true;
                         $error = '';
                         $content = '';
-                        $atime = date('Y-m-d H:i:s');
 
                         if (!$this->args['dryrun']) {
                             try {
@@ -351,11 +377,11 @@ final class Console
 
                         $data = [
                             'pid' => '',
-                            'time' => $atime,
                             'hook' => $hook,
+                            'time_gmt' => date('Y-m-d H:i:s', $timer_start),
                             'timer_start' => $timer_start,
                             'timer_stop' => $timer_stop,
-                            'status' => $this->args['dryrun'] ? 'dry-run' : $status,
+                            'status' => $this->args['dryrun'] ? 'dry-run' : $status ? 'success' : 'failure',
                         ];
 
                         if ('' !== $content) {
@@ -395,6 +421,8 @@ final class Console
         if (is_file($lock_file) && is_writable($lock_file)) {
             @unlink($lock_file);
         }
+
+        $this->cleanup();
 
         if ($lock_spawn) {
             delete_transient('doing_cron');

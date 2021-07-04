@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '44fb94c05acfeec32101b20475906cd14c245893',
+    'reference' => 'f047d4e92596d699d0ebaf1b9749efd44408e56a',
     'name' => 'nawawi/docket-cronwp',
   ),
   'versions' => 
@@ -18,7 +18,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '44fb94c05acfeec32101b20475906cd14c245893',
+      'reference' => 'f047d4e92596d699d0ebaf1b9749efd44408e56a',
     ),
   ),
 );
