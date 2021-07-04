@@ -41,13 +41,13 @@ define( 'DISABLE_WP_CRON', true );
 
 ## Usage
 ```
-cronwp -h
+$ cronwp -h
 
 Docket CronWP v1.0.8.
 Execute WordPress cron events in parallel.
 
 Usage:
-  docket-cronwp.phar [<path>|<options>]
+  cronwp [<path>|<options>]
 
 Path:
   Path to the WordPress files.
