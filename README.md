@@ -43,11 +43,11 @@ define( 'DISABLE_WP_CRON', true );
 ```
 cronwp -h
 
-Docket CronWP v1.0.6
+Docket CronWP v1.0.8.
 Execute WordPress cron events in parallel.
 
 Usage:
-  cronwp [<path>|<options>]
+  docket-cronwp.phar [<path>|<options>]
 
 Path:
   Path to the WordPress files.
@@ -55,10 +55,12 @@ Path:
 Options:
   -p --path <path>      Path to the WordPress files.
   -j --jobs <number>    Run number of events in parallel.
+  -u --url <url>        Multisite target URL.
   -a --run-now          Run all cron event.
   -t --dry-run          Run without execute cron event.
   -h --help             Display this help message.
-  -q --quiet            Suppress informational messages.
+  -q --quiet            Suppress output.
+  -v --verbose          Display additional output.
   -V --version          Display version.
 ```
 
@@ -71,51 +73,76 @@ cronwp /path-to/wordpress --jobs 3
 
 Output:
 ```
-Executed the cron event 'wp_update_plugins' in 2.163s
-[
-    pid => 43406
-    time => 2021-06-28 02:14:53
-    hook => wp_update_plugins
-    timer_start => 1624846493.252183
-    timer_stop => 1624846495.415512
-    status => true
-]
-
-Executed the cron event 'wp_update_themes' in 0.006s
-[
-    pid => 43407
-    time => 2021-06-28 02:14:53
-    hook => wp_update_themes
-    timer_start => 1624846493.253142
-    timer_stop => 1624846493.259058
-    status => true
-]
-
-Executed the cron event 'wp_scheduled_delete' in 0.003s
-[
-    pid => 43408
-    time => 2021-06-28 02:14:53
-    hook => wp_scheduled_delete
-    timer_start => 1624846493.254066
-    timer_stop => 1624846493.256793
-    status => true
-]
-
+Executed the cron event 'wp_privacy_delete_old_export_files' in 0.000s
+Executed the cron event 'wp_https_detection' in 0.004s
+Executed the cron event 'wp_version_check' in 3.476s
+Executed the cron event 'wp_update_plugins' in 2.721s
+Executed the cron event 'wp_update_themes' in 0.004s
+Executed the cron event 'recovery_mode_clean_expired_keys' in 0.000s
+Executed the cron event 'wp_scheduled_delete' in 0.001s
 Executed the cron event 'delete_expired_transients' in 0.000s
-[
-    pid => 43418
-    time => 2021-06-28 02:14:55
-    hook => delete_expired_transients
-    timer_start => 1624846495.438424
-    timer_stop => 1624846495.438591
-    status => true
-]
+Executed the cron event 'wp_site_health_scheduled_check' in 2.932s
 ```
 
-Run WordPress cron with 3 events execute in parallel every 5 minutes using server cron. Edit `/etc/crontab` and insert command below: 
+Run with additional output:
+
+```sh
+cronwp /path-to/wordpress --jobs 3 --verbose
+```
+
+Output:
+```
+Docket CronWP  : 1.0.8
+Path           : /home/awiedev/wpdev/wpdev-web/wp
+Jobs           : 3
+
+Executed the cron event 'wp_privacy_delete_old_export_files' in 0.001s
+pid            : 23093
+hook           : wp_privacy_delete_old_export_files
+time_gmt       : 2021-07-04 09:26:01
+timer_start    : 1625390761.8847
+timer_stop     : 1625390761.8853
+status         : success
+
+Executed the cron event 'wp_https_detection' in 0.004s
+pid            : 23094
+hook           : wp_https_detection
+time_gmt       : 2021-07-04 09:26:01
+timer_start    : 1625390761.907
+timer_stop     : 1625390761.9111
+status         : success
+
+Executed the cron event 'wp_version_check' in 3.468s
+pid            : 23096
+hook           : wp_version_check
+time_gmt       : 2021-07-04 09:26:01
+timer_start    : 1625390761.9313
+timer_stop     : 1625390765.3998
+status         : success
+
+Executed the cron event 'wp_update_plugins' in 2.666s
+pid            : 23098
+hook           : wp_update_plugins
+time_gmt       : 2021-07-04 09:26:05
+timer_start    : 1625390765.4321
+timer_stop     : 1625390768.0978
+status         : success
+
+Executed the cron event 'wp_update_themes' in 0.005s
+pid            : 23100
+hook           : wp_update_themes
+time_gmt       : 2021-07-04 09:26:08
+timer_start    : 1625390768.1265
+timer_stop     : 1625390768.1311
+status         : success
+
+....
+```
+
+Run WordPress cron with 3 events execute in parallel using server cron. Edit `/etc/crontab` and insert command below: 
 
 ```
-*/5 * * * * root /usr/local/bin/cronwp /path-to/wordpress -j3 &>/dev/null
+* * * * * root /usr/local/bin/cronwp /path-to/wordpress -q -j3 &>/dev/null
 ```
 
 Replace **root** with web server or php-fpm user to avoid issue with filesystem permission.
