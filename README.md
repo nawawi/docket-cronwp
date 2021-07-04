@@ -93,7 +93,7 @@ cronwp /path-to/wordpress --jobs 3 --verbose
 Output:
 ```
 Docket CronWP  : 1.0.8
-Path           : /home/awiedev/wpdev/wpdev-web/wp
+Path           : /path-to/wordpress
 Jobs           : 3
 
 Executed the cron event 'wp_privacy_delete_old_export_files' in 0.001s
