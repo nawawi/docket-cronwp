@@ -142,7 +142,7 @@ status         : success
 Run WordPress cron with 3 events execute in parallel using server cron. Edit `/etc/crontab` and insert command below: 
 
 ```
-* * * * * root /usr/local/bin/cronwp /path-to/wordpress -q -j3 &>/dev/null
+* * * * * root /usr/local/bin/cronwp /path-to/wordpress -q -j 3 &>/dev/null
 ```
 
 Replace **root** with web server or php-fpm user to avoid issue with filesystem permission.
