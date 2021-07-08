@@ -190,7 +190,7 @@ Replace **root** with web server or php-fpm user to avoid issue with filesystem 
 
 ## Contributions
 
-Please open an [issue](https://github.com/nawawi/docket-cronwp/issues) first to discuss what you would like to change.
+Please open an [issue](https://github.com/nawawi/docket-cronwp/issues) to report a bug or discuss what you would like to change.
 
 ## Sponsor this project
 
