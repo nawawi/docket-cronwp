@@ -156,7 +156,7 @@ Run with debugging output:
 cronwp /path-to/wordpress --jobs 3 --run-now --quiet --debug
 ```
 
-Output:
+Output: _( # Timestamp : Label : PID : Message )_
 ```
 # 1625731052.7421 : Process-begin  : 53132  : Processing 15 events, where every 3 events are run in parallel.
 # 1625731052.7432 : Forked         : 53133  : for event 'docketcache_gc'
@@ -179,6 +179,7 @@ Output:
 
 ....
 ```
+<br>
 
 Run WordPress cron with 3 events execute in parallel using server cron. Edit `/etc/crontab` and insert command below: 
 
