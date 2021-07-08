@@ -32,6 +32,7 @@ final class Console
         'help' => false,
         'version' => false,
         'verbose' => false,
+        'debug' => false,
     ];
 
     public function __construct()
@@ -83,14 +84,15 @@ final class Console
         $text .= '  Path to the WordPress files.'.\PHP_EOL.\PHP_EOL;
         $text .= 'Options:'.\PHP_EOL;
         $text .= '  -p --path <path>      Path to the WordPress files.'.\PHP_EOL;
-        $text .= '  -j --jobs <number>    Run number of events in parallel.'.\PHP_EOL;
+        $text .= '  -j --jobs <number>    Run number of events in parallel (default: '.$this->args['job'].').'.\PHP_EOL;
         $text .= '  -u --url <url>        Multisite target URL.'.\PHP_EOL;
         $text .= '  -a --run-now          Run all cron event.'.\PHP_EOL;
         $text .= '  -t --dry-run          Run without execute cron event.'.\PHP_EOL;
-        $text .= '  -h --help             Display this help message.'.\PHP_EOL;
         $text .= '  -q --quiet            Suppress output.'.\PHP_EOL;
         $text .= '  -v --verbose          Display additional output.'.\PHP_EOL;
+        $text .= '     --debug            Display debugging output.'.\PHP_EOL;
         $text .= '  -V --version          Display version.'.\PHP_EOL;
+        $text .= '  -h --help             Display this help message.'.\PHP_EOL;
         $this->output($text);
     }
 
@@ -135,14 +137,13 @@ final class Console
                 case 'verbose':
                     $this->args['verbose'] = $this->get_bool($key, false);
                     break;
+                case 'debug':
+                    $this->args['debug'] = $this->get_bool($key, false);
+                    break;
                 case 'j':
                 case 'jobs':
                     $job = (int) $value;
                     $this->args['job'] = $job < 0 ? 1 : $job;
-                    break;
-                case 'n':
-                case 'network':
-                    $this->args['network'] = $this->get_bool($key, false);
                     break;
                 case 'u':
                 case 'url':
@@ -283,11 +284,16 @@ final class Console
 
         // ctrl+c
         pcntl_signal(\SIGINT, function ($signo) use ($lock_file) {
-            $this->output('Exiting.. cleanup lock files.'.\PHP_EOL);
-            if (is_file($lock_file) && is_writable($lock_file)) {
-                @unlink($lock_file);
+            static $done = false;
+
+            if (!$done) {
+                $done = true;
+                $this->output('Exiting.. cleanup lock files.'.\PHP_EOL);
+                if (is_file($lock_file) && is_writable($lock_file)) {
+                    @unlink($lock_file);
+                }
+                $this->cleanup();
             }
-            $this->cleanup();
             exit(0);
         });
 
@@ -346,17 +352,21 @@ final class Console
 
         unset($crons, $cronhooks);
 
+        $mypid = getmypid();
+        $this->output_debug('Process-begin', $mypid, 'Processing '.\count($collect).' events, where every '.$this->args['job'].' events are run in parallel.');
+
         if (!empty($collect)) {
             $cnt = 0;
             $max = $this->args['job'];
-
+            $num = 0;
+            $all = \count($collect);
             foreach ($collect as $hook => $args) {
                 ++$cnt;
-
+                ++$num;
                 $this->proc_fork(
                     $hook,
                     function () use ($hook, $args) {
-                        $timer_start = microtime(true);
+                        $timer_start = sprintf('%.4F', microtime(true));
                         $status = true;
                         $error = '';
                         $content = '';
@@ -373,7 +383,7 @@ final class Console
                             }
                         }
 
-                        $timer_stop = microtime(true);
+                        $timer_stop = sprintf('%.4F', microtime(true));
 
                         $data = [
                             'pid' => '',
@@ -397,7 +407,18 @@ final class Console
                 );
 
                 if ($cnt >= $max) {
+                    $this->output_debug('Wait-begin', $mypid, 'Waiting '.$cnt.' events to finish.');
                     $this->proc_wait();
+
+                    $nx = $all - $num;
+                    if ($nx > $max) {
+                        $nx = $cnt;
+                    }
+
+                    if ($nx > 0) {
+                        $this->output_debug('Wait-done', $mypid, 'Processing next '.$nx.' events.');
+                    }
+
                     $cnt = 0;
                 }
             }
@@ -428,6 +449,7 @@ final class Console
             delete_transient('doing_cron');
         }
 
+        $this->output_debug('Process-done', $mypid, 'Exiting.');
         exit(0);
     }
 }

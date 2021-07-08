@@ -43,24 +43,27 @@ trait Bepart
     private function rowh(string $name, string $pad = ' ', int $minlen = 15)
     {
         $len = $minlen - \strlen($name);
-
-        return $name.str_repeat($pad, $len);
-    }
-
-    private function result_export($data)
-    {
-        $output = '';
-        foreach ($data as $name => $value) {
-            $output .= $this->rowh($name).': '.$value.\PHP_EOL;
+        if ($len < 0) {
+            $len = $minlen;
         }
 
-        return $output;
+        return $name.str_repeat($pad, $len);
     }
 
     private function output($text, $is_error = false)
     {
         $fd = $is_error ? \STDERR : \STDOUT;
         fwrite($fd, $text);
+    }
+
+    private function output_debug($title, $pid, $msg)
+    {
+        if (isset($this->args['debug']) && $this->args['debug']) {
+            $time = $this->rowh(sprintf('%.4F', microtime(true)), ' ', 16);
+            $title = $this->rowh($title);
+            $pid = $this->rowh($pid, ' ', 7);
+            $this->output('# '.$time.': '.$title.': '.$pid.': '.$msg.\PHP_EOL);
+        }
     }
 
     private function get_hash($string)

@@ -7,11 +7,13 @@ Execute WordPress cron events in parallel.
 
 Docket CronWP is a command-line tool for executing WordPress cron events in parallel.
 
+This tool is part of the [Docket Cache](https://docketcache.com) project.
+
 ## Requirements
 - UNIX-like environment (OS X, Linux, FreeBSD, Cygwin, WSL)
 - PHP >= 7.2.5
 - WordPress >= 5.4
-- PHP pnctl extension
+- PHP [pnctl](https://www.php.net/manual/en/book.pcntl.php) extension
 
 ## Installation
 
@@ -39,29 +41,38 @@ Disable the built in WordPress cron in `wp-config.php`:
 define( 'DISABLE_WP_CRON', true );
 ```
 
+Updating to the latest version:
+
+```sh
+sudo wget https://github.com/nawawi/docket-cronwp/raw/main/bin/docket-cronwp.phar -O /usr/local/bin/cronwp
+sudo chmod +x /usr/local/bin/cronwp
+
+```
+
 ## Usage
 ```
 $ cronwp -h
 
-Docket CronWP v1.0.8.
+Docket CronWP v1.0.9.
 Execute WordPress cron events in parallel.
 
 Usage:
-  cronwp [<path>|<options>]
+  docket-cronwp.phar [<path>|<options>]
 
 Path:
   Path to the WordPress files.
 
 Options:
   -p --path <path>      Path to the WordPress files.
-  -j --jobs <number>    Run number of events in parallel.
+  -j --jobs <number>    Run number of events in parallel (default: 3).
   -u --url <url>        Multisite target URL.
   -a --run-now          Run all cron event.
   -t --dry-run          Run without execute cron event.
-  -h --help             Display this help message.
   -q --quiet            Suppress output.
   -v --verbose          Display additional output.
+     --debug            Display debugging output.
   -V --version          Display version.
+  -h --help             Display this help message.
 ```
 
 ## Example
@@ -135,6 +146,36 @@ time_gmt       : 2021-07-04 09:26:08
 timer_start    : 1625390768.1265
 timer_stop     : 1625390768.1311
 status         : success
+
+....
+```
+
+Run with debugging output:
+
+```sh
+cronwp /path-to/wordpress --jobs 3 --run-now --quiet --debug
+```
+
+Output:
+```
+# 1625731052.7421 : Process-begin  : 53132  : Processing 15 events, where every 3 events are run in parallel.
+# 1625731052.7432 : Forked         : 53133  : for event 'docketcache_gc'
+# 1625731052.7434 : Callback-begin : 53133  : for event 'docketcache_gc'.
+# 1625731052.7833 : Callback-done  : 53133  : for event 'docketcache_gc'.
+# 1625731052.8051 : Parent-closed  : 53133  : for event 'docketcache_gc'.
+# 1625731052.8063 : Forked         : 53134  : for event 'docketcache_watchproc'
+# 1625731052.8064 : Callback-begin : 53134  : for event 'docketcache_watchproc'.
+# 1625731052.8501 : Callback-done  : 53134  : for event 'docketcache_watchproc'.
+# 1625731052.8698 : Parent-closed  : 53134  : for event 'docketcache_watchproc'.
+# 1625731052.8709 : Forked         : 53135  : for event 'wp_privacy_delete_old_export_files'
+# 1625731052.8710 : Callback-begin : 53135  : for event 'wp_privacy_delete_old_export_files'.
+# 1625731052.8715 : Callback-done  : 53135  : for event 'wp_privacy_delete_old_export_files'.
+# 1625731052.8918 : Parent-closed  : 53135  : for event 'wp_privacy_delete_old_export_files'.
+# 1625731052.8923 : Wait-begin     : 53132  : Waiting 3 events to finish.
+# 1625731052.8923 : Child-closed   : 53133  : for event 'docketcache_gc'.
+# 1625731052.8926 : Child-closed   : 53134  : for event 'docketcache_watchproc'.
+# 1625731052.8927 : Child-closed   : 53135  : for event 'wp_privacy_delete_old_export_files'.
+# 1625731052.8927 : Wait-done      : 53132  : Processing next 3 events.
 
 ....
 ```

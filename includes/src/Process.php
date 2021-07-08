@@ -51,6 +51,16 @@ trait Process
         return false;
     }
 
+    private function proc_output($data)
+    {
+        $output = '';
+        foreach ($data as $name => $value) {
+            $output .= $this->rowh($name).': '.$value.\PHP_EOL;
+        }
+
+        return $output;
+    }
+
     private function proc_fork($name, $callback)
     {
         if (!\is_callable($callback)) {
@@ -65,11 +75,16 @@ trait Process
 
             return false;
         }
+
         if ($pid) {
             $this->pids[$name] = $pid;
 
+            $this->output_debug('Forked', $pid, "for event '".$name."'");
+
             // prevent zombie
             pcntl_wait($status);
+
+            $this->output_debug('Parent-closed', $pid, "for event '".$name."'.");
 
             // we're parent, db already close, reconnect
             $this->wpdb_reconnect();
@@ -77,34 +92,41 @@ trait Process
             return true;
         }
 
+        $pid = getmypid();
+        $this->output_debug('Callback-begin', $pid, "for event '".$name."'.");
+
         \call_user_func($callback);
+
+        $this->output_debug('Callback-done', $pid, "for event '".$name."'.");
         exit(0);
     }
 
-    private function proc_wait($cleanup = false)
+    private function proc_wait()
     {
         if (empty($this->pids)) {
             return false;
         }
 
         $pids = array_keys($this->pids);
-        foreach ($pids as $key) {
-            if (!isset($this->pids[$key])) {
+        foreach ($pids as $name) {
+            if (!isset($this->pids[$name])) {
                 continue;
             }
 
-            $pid = $this->pids[$key];
-            pcntl_waitpid($this->pids[$key], $status);
-            unset($this->pids[$key]);
+            $pid = $this->pids[$name];
+            pcntl_waitpid($pid, $status);
+            unset($this->pids[$name]);
 
-            $result = $this->proc_get($this->key, $key);
+            $this->output_debug('Child-closed', $pid, "for event '".$name."'.");
+
+            $result = $this->proc_get($this->key, $name);
             if (!empty($result) && \is_array($result)) {
                 if (!$this->args['quiet']) {
                     $time = ($result['timer_stop'] - $result['timer_start']);
-                    $this->output('Executed the cron event \''.$key.'\' in '.number_format($time, 3).'s'.\PHP_EOL);
+                    $this->output('Executed the cron event \''.$name.'\' in '.number_format($time, 3).'s.'.\PHP_EOL);
                     if ($this->args['verbose']) {
                         $result['pid'] = $pid;
-                        $this->output($this->result_export($result).\PHP_EOL);
+                        $this->output($this->proc_output($result).\PHP_EOL);
                     }
                 }
             }

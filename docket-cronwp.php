@@ -34,7 +34,7 @@ if (!\extension_loaded('pcntl') || !\function_exists('pcntl_fork')) {
     'DOCKET_CRONWP',
     [
         'NAME' => 'Docket CronWP',
-        'VERSION' => '1.0.8',
+        'VERSION' => '1.0.9',
         'ROOT' => __DIR__,
         'SELF' => !empty($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : __FILE__,
     ]
