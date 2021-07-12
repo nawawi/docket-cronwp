@@ -96,11 +96,14 @@ final class Console
         $this->output($text);
     }
 
-    private function print_args()
+    private function print_args($site = null)
     {
         $text = $this->rowh($this->app()->name).': '.$this->app()->version.\PHP_EOL;
         $text .= $this->rowh('Path').': '.$this->args['wpdir'].\PHP_EOL;
         $text .= $this->rowh('Jobs').': '.$this->args['job'].\PHP_EOL;
+        if ($site) {
+            $text .= $this->rowh('Site').': '.$site.\PHP_EOL;
+        }
         $text .= \PHP_EOL;
         $this->output($text);
     }
@@ -203,9 +206,19 @@ final class Console
         $_SERVER['HTTP_USER_AGENT'] = '';
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_URI'] = '/';
 
         if (!empty($this->args['url'])) {
-            $_SERVER['HTTP_HOST'] = parse_url($this->args['url'], \PHP_URL_HOST);
+            $parts = parse_url($this->args['url']);
+            if (!empty($parts['host'])) {
+                $_SERVER['HTTP_HOST'] = $parts['host'];
+            }
+
+            if (!empty($parts['path'])) {
+                $_SERVER['REQUEST_URI'] = $parts['path'];
+            }
+
+            unset($parts);
         }
 
         \define('DOING_CRON', true);
@@ -249,8 +262,8 @@ final class Console
 
     public function run()
     {
-        $site = $this->strip_proto(get_home_url());
-        $this->key = $this->prefix.$this->get_hash($site);
+        $site = get_home_url();
+        $this->key = $this->prefix.$this->get_hash($this->strip_proto($site));
 
         $lock_file = $this->lockpath().$this->key.'-data.php';
         $stmp = time() + 3600;
@@ -306,7 +319,7 @@ final class Console
         }
 
         if (!$this->args['quiet'] && $this->args['verbose']) {
-            $this->print_args();
+            $this->print_args($site);
         }
 
         $wp_get_schedules = wp_get_schedules();
