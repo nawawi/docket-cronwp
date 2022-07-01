@@ -10,7 +10,7 @@ Docket CronWP is a command-line tool for executing WordPress cron events in para
 This tool is part of the [Docket Cache](https://docketcache.com) project.
 
 ## Requirements
-- UNIX-like environment (OS X, Linux, FreeBSD, Cygwin, WSL)
+- UNIX-like environment
 - PHP >= 7.2.5
 - WordPress >= 5.4
 - PHP [pnctl](https://www.php.net/manual/en/book.pcntl.php) extension
@@ -53,7 +53,7 @@ sudo chmod +x /usr/local/bin/cronwp
 ```
 $ cronwp -h
 
-Docket CronWP v1.0.9.
+Docket CronWP v1.2.
 Execute WordPress cron events in parallel.
 
 Usage:
@@ -80,6 +80,12 @@ Run WordPress cron with 3 events execute in parallel:
 
 ```sh
 cronwp /path-to/wordpress --jobs 3
+```
+
+Or within the WordPress installation directory.
+
+```sh
+cronwp --jobs 3
 ```
 
 Output:
@@ -184,10 +190,10 @@ Output: _( # Timestamp : Label : PID : Message )_
 Run WordPress cron with 3 events execute in parallel using server cron. Edit `/etc/crontab` and insert command below: 
 
 ```
-* * * * * root /usr/local/bin/cronwp /path-to/wordpress -q -j 3 &>/dev/null
+* * * * * apache /usr/local/bin/cronwp /path-to/wordpress -q -j 3 &>/dev/null
 ```
 
-Replace **root** with web server or php-fpm user to avoid issue with filesystem permission.
+Replace **apache** with web server or php-fpm user to avoid issue with filesystem permission.
 
 ## Contributions
 

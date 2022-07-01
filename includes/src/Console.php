@@ -189,15 +189,9 @@ final class Console
     private function register_wpload()
     {
         $wpload = $this->args['wpdir'].'/wp-load.php';
-        $wpcron = $this->args['dcdir'].'/includes/wp/cron.php';
 
-        if (!@is_file($wpload)) {
+        if (!file_exists($wpload)) {
             $this->output('Failed to load: '.$wpload.\PHP_EOL, true);
-            exit(1);
-        }
-
-        if (!@is_file($wpcron)) {
-            $this->output('Failed to load: '.$wpcron.\PHP_EOL, true);
             exit(1);
         }
 
@@ -224,8 +218,6 @@ final class Console
         \define('DOING_CRON', true);
 
         require_once $wpload;
-        require_once $wpcron;
-
         $this->wpdb_suppress_errors();
     }
 
@@ -274,7 +266,7 @@ final class Console
         }
 
         add_filter(
-            'dcronwp/lockfile',
+            'docketcronwp/lockfile',
             function ($lockfile) use ($lock_file) {
                 return $lock_file;
             }
@@ -324,7 +316,7 @@ final class Console
 
         $wp_get_schedules = wp_get_schedules();
         add_filter(
-            'dcronwp/wp_get_schedules',
+            'docketcronwp/upstream_get_schedules',
             function ($arr) use ($wp_get_schedules) {
                 return $wp_get_schedules;
             }
@@ -349,12 +341,12 @@ final class Console
                     $schedule = $v['schedule'];
 
                     if ($schedule) {
-                        if (false === dc_wp_reschedule_event($timestamp, $schedule, $hook, $v['args'])) {
+                        if (false === Cron::reschedule_event($timestamp, $schedule, $hook, $v['args'])) {
                             continue;
                         }
                     }
 
-                    if (false === dc_wp_unschedule_event($timestamp, $hook, $v['args'])) {
+                    if (false === Cron::unschedule_event($timestamp, $hook, $v['args'])) {
                         continue;
                     }
 
@@ -441,7 +433,7 @@ final class Console
         }
 
         if (!$this->args['dryrun']) {
-            $cron = dc_getdata();
+            $cron = Cron::getdata();
             if (!empty($cron) && \is_array($cron)) {
                 _set_cron_array($cron);
             }
