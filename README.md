@@ -202,11 +202,12 @@ Please open an [issue](https://github.com/nawawi/docket-cronwp/issues) to report
 
 ## Sponsor this project
 
-Fund Docket CronWP one-off or recurring payment to support open-source development efforts.  
+Docket CronWP is part of the Docket Cache project.  
+Fund this project one-off or recurring payment to support open-source development efforts.  
 
-[![PayPal](./.docketcache.com/paypalme.png)](https://www.paypal.com/paypalme/ghostbirdme/10usd) 
-[![SecurePay Malaysia](./.docketcache.com/securepay.png)](https://securepay.my/collections/docketcacheproject) 
-[![Bitcoin](./.docketcache.com/bitcoin.png)](https://www.blockchain.com/en/btc/address/3BD96JehFzsdFv4MTmvvgVhfVFLC86414n)
+[https://docketcache.com/sponsorship/](https://docketcache.com/sponsorship/)
+
+
 
 ## License
 
