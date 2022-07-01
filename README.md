@@ -85,6 +85,7 @@ cronwp /path-to/wordpress --jobs 3
 Or within the WordPress installation directory.
 
 ```sh
+cd /path-to/wordpress
 cronwp --jobs 3
 ```
 
@@ -109,7 +110,7 @@ cronwp /path-to/wordpress --jobs 3 --verbose
 
 Output:
 ```
-Docket CronWP  : 1.0.8
+Docket CronWP  : 1.2
 Path           : /path-to/wordpress
 Jobs           : 3
 
